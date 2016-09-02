@@ -10,3 +10,17 @@ cdef class H2OConfig:
 
     def __dealloc__(self):
         ch2o.h2o_config_dispose(&self.config)
+
+
+cdef class H2OEvloop:
+    cdef:
+        ch2o.h2o_evloop_t* loop
+
+    def __cinit__(self):
+        self.loop = ch2o.h2o_evloop_create()
+
+    def __dealloc__(self):
+        pass  # leak
+
+    def run(self):
+        return ch2o.h2o_evloop_run(self.loop)

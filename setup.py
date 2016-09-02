@@ -1,6 +1,12 @@
 import pkgconfig
 from setuptools import setup, Extension
 
+extension_args = pkgconfig.parse('libssl libh2o-evloop')
+extension_args['define_macros'].add(('H2O_USE_LIBUV', 0))
+extension_args['sources'].add('h2o/h2o.c')
+
+print(extension_args)
+
 setup(
     name = 'h2o',
     version = '0.0.1',
@@ -8,11 +14,7 @@ setup(
     ext_modules = [
         Extension(
             'h2o.h2o',
-            sources = [
-                'h2o/h2o.c',
-            ],
-            **dict((key, list(value))
-                   for key, value in pkgconfig.parse('libssl libh2o-evloop').items())
-        )
+            **dict((key, list(value)) for key, value in extension_args.items())
+        ),
     ],
 )
