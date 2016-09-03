@@ -4,32 +4,46 @@ cimport ch2o
 
 cdef class GlobalConf:
     cdef:
-        ch2o.h2o_globalconf_t config
+        ch2o.h2o_globalconf_t conf
 
     def __cinit__(self):
-        ch2o.h2o_config_init(&self.config)
+        ch2o.h2o_config_init(&self.conf)
 
     def __dealloc__(self):
-        ch2o.h2o_config_dispose(&self.config)
-
-    def register_host(self, bytes host, uint16_t port):
-        return HostConf(self, host, port)
+        ch2o.h2o_config_dispose(&self.conf)
 
 
 cdef class HostConf:
     cdef:
-        GlobalConf config  # keeps reference for hostconf
+        GlobalConf conf  # keeps reference for hostconf
         ch2o.h2o_hostconf_t* hostconf
 
-    def __cinit__(self, GlobalConf config, bytes host, uint16_t port):
-        self.config = config
+    def __cinit__(self, GlobalConf conf, bytes host, uint16_t port):
+        self.conf = conf
         self.hostconf = ch2o.h2o_config_register_host(
-            &config.config,
+            &conf.conf,
             ch2o.h2o_iovec_init(<char*>host, len(host)),
             port)
 
-    def register_path(self, bytes path):
-        ch2o.h2o_config_register_path(self.hostconf, path)
+
+cdef class PathConf:
+    cdef:
+        HostConf hostconf  # keeps reference for pathconf
+        ch2o.h2o_pathconf_t* pathconf
+
+    def __cinit__(self, HostConf hostconf, bytes path):
+        self.hostconf = hostconf
+        self.pathconf = ch2o.h2o_config_register_path(self.hostconf.hostconf, path)
+
+
+cdef class Handler:
+    cdef:
+        PathConf pathconf  # keeps reference for handler
+        ch2o.h2o_handler_t* handler
+
+    def __cinit__(self, PathConf pathconf):
+        self.pathconf = pathconf
+        self.handler = ch2o.h2o_create_handler(self.pathconf.pathconf, sizeof(ch2o.h2o_handler_t))
 
 
 cdef class EvLoop:
@@ -44,3 +58,15 @@ cdef class EvLoop:
 
     def run(self):
         return ch2o.h2o_evloop_run(self.loop)
+
+
+cdef class Context:
+    cdef:
+        EvLoop loop  # keeps reference for ctx
+        GlobalConf conf  # keeps reference for ctx
+        ch2o.h2o_context_t ctx
+
+    def __cinit__(self, EvLoop loop, GlobalConf conf):
+        self.loop = loop
+        self.conf = conf
+        ch2o.h2o_context_init(&self.ctx, loop.loop, &conf.conf)

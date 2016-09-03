@@ -1,8 +1,11 @@
 import h2o
 
 if __name__ == '__main__':
-    global_conf = h2o.GlobalConf()
-    host_conf = global_conf.register_host(b'default', 65535)
-    host_conf.register_path(b'/')
-    #loop = h2o.H2OEvLoop()
-    #loop.run()
+    conf = h2o.GlobalConf()
+    hostconf = h2o.HostConf(conf, b'default', 65535)
+    pathconf = h2o.PathConf(hostconf, b'/')
+    handler = h2o.Handler(pathconf)
+    loop = h2o.EvLoop()
+    context = h2o.Context(loop, conf)
+
+    loop.run()
