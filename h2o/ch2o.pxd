@@ -37,3 +37,11 @@ cdef extern from "h2o.h":
         pass
 
     void h2o_context_init(h2o_context_t* ctx, h2o_evloop_t* loop, h2o_globalconf_t* conf)
+
+    ctypedef struct h2o_socket_t:
+        void* data
+
+    ctypedef void (*h2o_socket_cb)(h2o_socket_t* sock, int status)
+
+    h2o_socket_t* h2o_evloop_socket_create(h2o_evloop_t* loop, int fd, int flags)
+    void h2o_socket_read_start(h2o_socket_t* sock, h2o_socket_cb cb)

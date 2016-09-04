@@ -60,6 +60,27 @@ cdef class EvLoop:
         return ch2o.h2o_evloop_run(self.loop)
 
 
+cdef class Socket:
+    cdef:
+        EvLoop loop
+        ch2o.h2o_socket_t* sock
+
+    def __init__(self, EvLoop loop, int sockfd, int flags):
+        self.loop = loop
+        self.sock = ch2o.h2o_evloop_socket_create(loop.loop, sockfd, flags)
+        self.sock.data = <void*>self
+
+    def read_start(self):
+        ch2o.h2o_socket_read_start(self.sock, on_socket_read)
+
+    def on_read(self, status):
+        pass
+
+
+cdef void on_socket_read(ch2o.h2o_socket_t* sock, int status):
+    (<Socket>sock.data).on_read(status)
+
+
 cdef class Context:
     cdef:
         EvLoop loop  # keeps reference for ctx
