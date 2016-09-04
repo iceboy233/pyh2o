@@ -45,3 +45,4 @@ cdef extern from "h2o.h":
 
     h2o_socket_t* h2o_evloop_socket_create(h2o_evloop_t* loop, int fd, int flags)
     void h2o_socket_read_start(h2o_socket_t* sock, h2o_socket_cb cb)
+    void h2o_socket_close(h2o_socket_t* sock)

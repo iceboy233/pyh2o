@@ -70,6 +70,10 @@ cdef class Socket:
         self.sock = ch2o.h2o_evloop_socket_create(loop.loop, sockfd, flags)
         self.sock.data = <void*>self
 
+    def __dealloc__(self):
+        if self.sock:
+            ch2o.h2o_socket_close(self.sock)
+
     def read_start(self):
         ch2o.h2o_socket_read_start(self.sock, on_socket_read)
 
