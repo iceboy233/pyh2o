@@ -39,11 +39,22 @@ cdef class PathConf:
 cdef class Handler:
     cdef:
         PathConf pathconf  # keeps reference for handler
-        ch2o.h2o_handler_t* handler
+        ch2o.pyh2o_handler_t* handler
 
-    def __cinit__(self, PathConf pathconf):
+    def __init__(self, PathConf pathconf):
         self.pathconf = pathconf
-        self.handler = ch2o.h2o_create_handler(self.pathconf.pathconf, sizeof(ch2o.h2o_handler_t))
+        self.handler = <ch2o.pyh2o_handler_t*>ch2o.h2o_create_handler(
+            self.pathconf.pathconf, sizeof(ch2o.pyh2o_handler_t))
+        self.handler.base.on_req = on_handler_req
+        self.handler.data = <void*>self
+
+    def on_req(self):
+        pass
+
+
+cdef int on_handler_req(ch2o.h2o_handler_t* handler, ch2o.h2o_req_t* req):
+    data = (<ch2o.pyh2o_handler_t*>handler).data
+    (<Handler>data).on_req()
 
 
 cdef class EvLoop:
@@ -62,17 +73,22 @@ cdef class EvLoop:
 
 cdef class Socket:
     cdef:
-        EvLoop loop
         ch2o.h2o_socket_t* sock
-
-    def __init__(self, EvLoop loop, int sockfd, int flags):
-        self.loop = loop
-        self.sock = ch2o.h2o_evloop_socket_create(loop.loop, sockfd, flags)
-        self.sock.data = <void*>self
+        EvLoop loop
 
     def __dealloc__(self):
         if self.sock:
             ch2o.h2o_socket_close(self.sock)
+
+    def create(self, EvLoop loop, int sockfd, int flags):
+        self.sock = ch2o.h2o_evloop_socket_create(loop.loop, sockfd, flags)
+        self.sock.data = <void*>self
+
+    def accept(self, AcceptCtx accept_ctx):
+        sock = ch2o.h2o_evloop_socket_accept(self.sock)
+        if not sock:
+            return
+        ch2o.h2o_accept(&accept_ctx.accept_ctx, sock)
 
     def read_start(self):
         ch2o.h2o_socket_read_start(self.sock, on_socket_read)
@@ -95,3 +111,16 @@ cdef class Context:
         self.loop = loop
         self.conf = conf
         ch2o.h2o_context_init(&self.ctx, loop.loop, &conf.conf)
+
+
+cdef class AcceptCtx:
+    cdef:
+        Context ctx
+        GlobalConf conf
+        ch2o.h2o_accept_ctx_t accept_ctx
+
+    def __cinit__(self, Context ctx, GlobalConf conf):
+        self.ctx = ctx
+        self.conf = conf
+        self.accept_ctx.ctx = &ctx.ctx
+        self.accept_ctx.hosts = conf.conf.hosts
