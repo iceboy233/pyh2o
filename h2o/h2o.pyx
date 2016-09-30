@@ -33,7 +33,7 @@ cdef class PathConf:
 
     def __cinit__(self, HostConf hostconf, bytes path):
         self.hostconf = hostconf
-        self.pathconf = ch2o.h2o_config_register_path(self.hostconf.hostconf, path)
+        self.pathconf = ch2o.h2o_config_register_path(self.hostconf.hostconf, path, 0)
 
 
 cdef class Handler:
@@ -54,7 +54,10 @@ cdef class Handler:
 
 cdef int on_handler_req(ch2o.h2o_handler_t* handler, ch2o.h2o_req_t* req):
     data = (<ch2o.pyh2o_handler_t*>handler).data
-    (<Handler>data).on_req()
+    body = (<Handler>data).on_req()
+
+    # TODO(iceboy): header, streaming, etc.
+    ch2o.h2o_send_inline(req, body, len(body))
 
 
 cdef class EvLoop:
@@ -93,12 +96,14 @@ cdef class Socket:
     def read_start(self):
         ch2o.h2o_socket_read_start(self.sock, on_socket_read)
 
-    def on_read(self, status):
+    def on_read(self):
         pass
 
 
-cdef void on_socket_read(ch2o.h2o_socket_t* sock, int status):
-    (<Socket>sock.data).on_read(status)
+cdef void on_socket_read(ch2o.h2o_socket_t* sock, const char* err):
+    if err != NULL:
+        return  # TODO(iceboy): error handling.
+    (<Socket>sock.data).on_read()
 
 
 cdef class Context:

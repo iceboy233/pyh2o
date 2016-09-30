@@ -12,15 +12,13 @@ class MySocket(h2o.Socket):
         super().create(loop, self.sock.fileno(), 0x20)
         self.accept_ctx = accept_ctx
 
-    def on_read(self, status):
+    def on_read(self):
         self.accept(self.accept_ctx)
 
 
 class MyHandler(h2o.Handler):
     def on_req(self):
-        print('on_req called')
-        os.abort()
-
+        return b'<h1>It works!</h1>'
 
 
 if __name__ == '__main__':

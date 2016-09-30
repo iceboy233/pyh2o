@@ -19,7 +19,7 @@ cdef extern from "h2o.h":
 
     void h2o_config_init(h2o_globalconf_t* conf)
     h2o_hostconf_t* h2o_config_register_host(h2o_globalconf_t* conf, h2o_iovec_t host, uint16_t port)
-    h2o_pathconf_t* h2o_config_register_path(h2o_hostconf_t* hostconf, const char* path)
+    h2o_pathconf_t* h2o_config_register_path(h2o_hostconf_t* hostconf, const char* path, int flags)
     void h2o_config_dispose(h2o_globalconf_t* conf)
 
     ctypedef struct h2o_handler_t:
@@ -41,7 +41,7 @@ cdef extern from "h2o.h":
     ctypedef struct h2o_socket_t:
         void* data
 
-    ctypedef void (*h2o_socket_cb)(h2o_socket_t* sock, int status)
+    ctypedef void (*h2o_socket_cb)(h2o_socket_t* sock, const char* err)
 
     h2o_socket_t* h2o_evloop_socket_create(h2o_evloop_t* loop, int fd, int flags)
     h2o_socket_t* h2o_evloop_socket_accept(h2o_socket_t* listener)
@@ -56,6 +56,8 @@ cdef extern from "h2o.h":
 
     ctypedef struct h2o_req_t:
         pass
+
+    void h2o_send_inline(h2o_req_t* req, const char* body, size_t len)
 
 
 ctypedef struct pyh2o_handler_t:
