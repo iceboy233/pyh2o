@@ -7,5 +7,5 @@ Think of high performance, interaction with ``asyncio``, etc.
 Build
 -----
 
-1. Use :code:`cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON` (static) or :code:`cmake -DBUILD_SHARED_LIBS=ON` (shared) to configure, :code:`make` and :code:`make install` libh2o-evloop.
+1. Use :code:`cmake -DBUILD_SHARED_LIBS=ON` to configure, :code:`make` and :code:`make install` libh2o-evloop.
 2. :code:`make` pyh2o, if missing python imports, use :code:`pip` to install them.
