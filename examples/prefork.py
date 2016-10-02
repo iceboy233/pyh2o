@@ -1,6 +1,10 @@
+import atexit
 import h2o
 import os
+import signal
 import socket
+
+PREFORK = 4
 
 
 class MySocket(h2o.Socket):
@@ -27,6 +31,13 @@ if __name__ == '__main__':
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
     sock.bind(('127.0.0.1', 8888))
     sock.listen()
+
+    for i in range(1, PREFORK):
+        pid = os.fork()
+        if not pid:
+            break
+        else:
+            atexit.register(lambda: os.kill(pid, signal.SIGTERM))
     loop = h2o.EvLoop()
     ctx = h2o.Context(loop, conf)
     sock_obj = MySocket(loop, sock, h2o.AcceptCtx(ctx, conf))
