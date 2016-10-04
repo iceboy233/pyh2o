@@ -27,23 +27,23 @@ cdef extern from "h2o.h":
 
     h2o_handler_t* h2o_create_handler(h2o_pathconf_t* pathconf, size_t sz)
 
-    ctypedef struct h2o_evloop_t:
+    ctypedef struct h2o_loop_t:
         pass
 
-    h2o_evloop_t* h2o_evloop_create()
-    int h2o_evloop_run(h2o_evloop_t* loop)
+    h2o_loop_t* h2o_evloop_create()
+    int h2o_evloop_run(h2o_loop_t* loop)
 
     ctypedef struct h2o_context_t:
         pass
 
-    void h2o_context_init(h2o_context_t* ctx, h2o_evloop_t* loop, h2o_globalconf_t* conf)
+    void h2o_context_init(h2o_context_t* ctx, h2o_loop_t* loop, h2o_globalconf_t* conf)
 
     ctypedef struct h2o_socket_t:
         void* data
 
     ctypedef void (*h2o_socket_cb)(h2o_socket_t* sock, const char* err)
 
-    h2o_socket_t* h2o_evloop_socket_create(h2o_evloop_t* loop, int fd, int flags)
+    h2o_socket_t* h2o_evloop_socket_create(h2o_loop_t* loop, int fd, int flags)
     h2o_socket_t* h2o_evloop_socket_accept(h2o_socket_t* listener)
     void h2o_socket_read_start(h2o_socket_t* sock, h2o_socket_cb cb)
     void h2o_socket_close(h2o_socket_t* sock)

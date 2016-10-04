@@ -2,6 +2,9 @@ from libc.stdint cimport uint16_t
 cimport ch2o
 
 
+if H2O_USE_LIBUV: print('haha')
+
+
 cdef class GlobalConf:
     cdef:
         ch2o.h2o_globalconf_t conf
@@ -60,9 +63,9 @@ cdef int on_handler_req(ch2o.h2o_handler_t* handler, ch2o.h2o_req_t* req):
     ch2o.h2o_send_inline(req, body, len(body))
 
 
-cdef class EvLoop:
+cdef class Loop:
     cdef:
-        ch2o.h2o_evloop_t* loop
+        ch2o.h2o_loop_t* loop
 
     def __cinit__(self):
         self.loop = ch2o.h2o_evloop_create()
@@ -77,13 +80,13 @@ cdef class EvLoop:
 cdef class Socket:
     cdef:
         ch2o.h2o_socket_t* sock
-        EvLoop loop
+        Loop loop
 
     def __dealloc__(self):
         if self.sock:
             ch2o.h2o_socket_close(self.sock)
 
-    def create(self, EvLoop loop, int sockfd, int flags):
+    def create(self, Loop loop, int sockfd, int flags):
         self.sock = ch2o.h2o_evloop_socket_create(loop.loop, sockfd, flags)
         self.sock.data = <void*>self
 
@@ -108,11 +111,11 @@ cdef void on_socket_read(ch2o.h2o_socket_t* sock, const char* err):
 
 cdef class Context:
     cdef:
-        EvLoop loop  # keeps reference for ctx
+        Loop loop  # keeps reference for ctx
         GlobalConf conf  # keeps reference for ctx
         ch2o.h2o_context_t ctx
 
-    def __cinit__(self, EvLoop loop, GlobalConf conf):
+    def __cinit__(self, Loop loop, GlobalConf conf):
         self.loop = loop
         self.conf = conf
         ch2o.h2o_context_init(&self.ctx, loop.loop, &conf.conf)

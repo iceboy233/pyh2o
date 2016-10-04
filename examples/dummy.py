@@ -27,7 +27,7 @@ if __name__ == '__main__':
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
     sock.bind(('127.0.0.1', 8888))
     sock.listen()
-    loop = h2o.EvLoop()
+    loop = h2o.Loop()
     ctx = h2o.Context(loop, conf)
     sock_obj = MySocket(loop, sock, h2o.AcceptCtx(ctx, conf))
     sock_obj.read_start()

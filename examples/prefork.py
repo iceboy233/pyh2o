@@ -38,7 +38,7 @@ if __name__ == '__main__':
             break
         else:
             atexit.register(lambda: os.kill(pid, signal.SIGTERM))
-    loop = h2o.EvLoop()
+    loop = h2o.Loop()
     ctx = h2o.Context(loop, conf)
     sock_obj = MySocket(loop, sock, h2o.AcceptCtx(ctx, conf))
     sock_obj.read_start()
