@@ -1,71 +1,73 @@
+from cpython cimport Py_INCREF
 from libc.stdint cimport uint16_t
 cimport ch2o
 
 
-if H2O_USE_LIBUV: print('haha')
-
-
-cdef class GlobalConf:
-    cdef:
-        ch2o.h2o_globalconf_t conf
+cdef class Config:
+    cdef ch2o.h2o_globalconf_t conf
+    cdef list handler_refs
 
     def __cinit__(self):
         ch2o.h2o_config_init(&self.conf)
+        self.handler_refs = list()
 
     def __dealloc__(self):
         ch2o.h2o_config_dispose(&self.conf)
 
-
-cdef class HostConf:
-    cdef:
-        GlobalConf conf  # keeps reference for hostconf
-        ch2o.h2o_hostconf_t* hostconf
-
-    def __cinit__(self, GlobalConf conf, bytes host, uint16_t port):
-        self.conf = conf
-        self.hostconf = ch2o.h2o_config_register_host(
-            &conf.conf,
-            ch2o.h2o_iovec_init(<char*>host, len(host)),
-            port)
+    def add_host(self, bytes host, uint16_t port):
+        hostconf = ch2o.h2o_config_register_host(
+            &self.conf, ch2o.h2o_iovec_init(<char*>host, len(host)), port)
+        return _make_host(self, hostconf)
 
 
-cdef class PathConf:
-    cdef:
-        HostConf hostconf  # keeps reference for pathconf
-        ch2o.h2o_pathconf_t* pathconf
-
-    def __cinit__(self, HostConf hostconf, bytes path):
-        self.hostconf = hostconf
-        self.pathconf = ch2o.h2o_config_register_path(self.hostconf.hostconf, path, 0)
+cdef _make_host(Config config, ch2o.h2o_hostconf_t* hostconf):
+    host = Host()
+    host.config = config
+    host.hostconf = hostconf
+    return host
 
 
-cdef class Handler:
-    cdef:
-        PathConf pathconf  # keeps reference for handler
-        ch2o.pyh2o_handler_t* handler
+cdef class Host:
+    cdef Config config  # keeps reference for hostconf
+    cdef ch2o.h2o_hostconf_t* hostconf
 
-    def __init__(self, PathConf pathconf):
-        self.pathconf = pathconf
-        self.handler = <ch2o.pyh2o_handler_t*>ch2o.h2o_create_handler(
-            self.pathconf.pathconf, sizeof(ch2o.pyh2o_handler_t))
-        self.handler.base.on_req = on_handler_req
-        self.handler.data = <void*>self
-
-    def on_req(self):
-        pass
+    def add_path(self, bytes path, int flags=0):
+        pathconf = ch2o.h2o_config_register_path(self.hostconf, path, flags)
+        return _make_path(self.config, pathconf)
 
 
-cdef int on_handler_req(ch2o.h2o_handler_t* handler, ch2o.h2o_req_t* req):
+cdef _make_path(Config config, ch2o.h2o_pathconf_t* pathconf):
+    path = Path()
+    path.config = config
+    path.pathconf = pathconf
+    return path
+
+
+cdef class Path:
+    cdef Config config  # keeps reference for pathconf
+    cdef ch2o.h2o_pathconf_t* pathconf
+
+    def add_handler(self, handler_func):
+        handler = <ch2o.pyh2o_handler_t*>ch2o.h2o_create_handler(
+            self.pathconf, sizeof(ch2o.pyh2o_handler_t))
+        handler.base.on_req = _handler_on_req
+        handler.data = <void*>handler_func
+        self.config.handler_refs.append(handler_func)
+
+
+cdef int _handler_on_req(ch2o.h2o_handler_t* handler, ch2o.h2o_req_t* req):
     data = (<ch2o.pyh2o_handler_t*>handler).data
-    body = (<Handler>data).on_req()
+    body = (<object>data)()
 
     # TODO(iceboy): header, streaming, etc.
     ch2o.h2o_send_inline(req, body, len(body))
 
 
+H2O_SOCKET_FLAG_DONT_READ = 0x20
+
+
 cdef class Loop:
-    cdef:
-        ch2o.h2o_loop_t* loop
+    cdef ch2o.h2o_loop_t* loop
 
     def __cinit__(self):
         self.loop = ch2o.h2o_evloop_create()
@@ -73,62 +75,37 @@ cdef class Loop:
     def __dealloc__(self):
         pass  # FIXME(iceboy): leak
 
+    def start_accept(self, int sockfd, config, int flags=H2O_SOCKET_FLAG_DONT_READ):
+        sock = ch2o.h2o_evloop_socket_create(self.loop, sockfd, flags)
+        accept_context = _make_accept_context(self, config)
+        Py_INCREF(accept_context)
+        sock.data = <void*>accept_context
+        ch2o.h2o_socket_read_start(sock, _socket_on_read)
+        # FIXME(iceboy): leak
+
     def run(self):
         return ch2o.h2o_evloop_run(self.loop)
 
 
-cdef class Socket:
-    cdef:
-        ch2o.h2o_socket_t* sock
-        Loop loop
-
-    def __dealloc__(self):
-        if self.sock:
-            ch2o.h2o_socket_close(self.sock)
-
-    def create(self, Loop loop, int sockfd, int flags):
-        self.sock = ch2o.h2o_evloop_socket_create(loop.loop, sockfd, flags)
-        self.sock.data = <void*>self
-
-    def accept(self, AcceptCtx accept_ctx):
-        sock = ch2o.h2o_evloop_socket_accept(self.sock)
-        if not sock:
-            return
-        ch2o.h2o_accept(&accept_ctx.accept_ctx, sock)
-
-    def read_start(self):
-        ch2o.h2o_socket_read_start(self.sock, on_socket_read)
-
-    def on_read(self):
-        pass
+cdef _make_accept_context(Loop loop, Config config):
+    accept_context = _AcceptContext()
+    accept_context.config = config
+    ch2o.h2o_context_init(&accept_context.context, loop.loop, &config.conf)
+    accept_context.accept_ctx.ctx = &accept_context.context
+    accept_context.accept_ctx.hosts = config.conf.hosts
+    return accept_context
 
 
-cdef void on_socket_read(ch2o.h2o_socket_t* sock, const char* err):
-    if err != NULL:
+cdef class _AcceptContext:
+    cdef Config config  # keeps reference for context and accept_ctx
+    cdef ch2o.h2o_context_t context
+    cdef ch2o.h2o_accept_ctx_t accept_ctx
+
+
+cdef void _socket_on_read(ch2o.h2o_socket_t* sock, const char* err):
+    if err:
         return  # TODO(iceboy): error handling.
-    (<Socket>sock.data).on_read()
-
-
-cdef class Context:
-    cdef:
-        Loop loop  # keeps reference for ctx
-        GlobalConf conf  # keeps reference for ctx
-        ch2o.h2o_context_t ctx
-
-    def __cinit__(self, Loop loop, GlobalConf conf):
-        self.loop = loop
-        self.conf = conf
-        ch2o.h2o_context_init(&self.ctx, loop.loop, &conf.conf)
-
-
-cdef class AcceptCtx:
-    cdef:
-        Context ctx
-        GlobalConf conf
-        ch2o.h2o_accept_ctx_t accept_ctx
-
-    def __cinit__(self, Context ctx, GlobalConf conf):
-        self.ctx = ctx
-        self.conf = conf
-        self.accept_ctx.ctx = &ctx.ctx
-        self.accept_ctx.hosts = conf.conf.hosts
+    accept_sock = ch2o.h2o_evloop_socket_accept(sock)
+    if not accept_sock:
+        return  # TODO(iceboy): ???
+    ch2o.h2o_accept(&(<_AcceptContext>sock.data).accept_ctx, accept_sock)
