@@ -54,8 +54,11 @@ cdef extern from "h2o.h":
 
     void h2o_accept(h2o_accept_ctx_t* ctx, h2o_socket_t* sock)
 
+    ctypedef struct h2o_res_t:
+        int status
+
     ctypedef struct h2o_req_t:
-        pass
+        h2o_res_t res
 
     void h2o_send_inline(h2o_req_t* req, const char* body, size_t len)
 

@@ -60,6 +60,7 @@ cdef int _handler_on_req(ch2o.h2o_handler_t* handler, ch2o.h2o_req_t* req):
     body = (<object>data)()
 
     # TODO(iceboy): header, streaming, etc.
+    req.res.status = 200
     ch2o.h2o_send_inline(req, body, len(body))
 
 
