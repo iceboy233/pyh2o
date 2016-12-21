@@ -1,5 +1,4 @@
-.PHONY: compile
+.PHONY: build
 
-compile:
-	cython3 h2o/h2o.pyx
+build:
 	python3 setup.py build_ext --inplace

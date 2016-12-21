@@ -1,5 +1,5 @@
 from cpython cimport Py_INCREF
-from libc.stdint cimport uint16_t
+from libc.stdint cimport uint16_t, INT32_MAX
 cimport ch2o
 
 
@@ -85,7 +85,7 @@ cdef class Loop:
         # FIXME(iceboy): leak
 
     def run(self):
-        return ch2o.h2o_evloop_run(self.loop)
+        return ch2o.h2o_evloop_run(self.loop, INT32_MAX)
 
 
 cdef _make_accept_context(Loop loop, Config config):
