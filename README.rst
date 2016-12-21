@@ -13,7 +13,7 @@ Build
 -----
 
 1. Use :code:`cmake -DBUILD_SHARED_LIBS=ON` to configure, :code:`make`
-libh2o-evloop.
+   libh2o-evloop.
 2. (Optional) :code:`make install` libh2o-evloop.
 3. :code:`make` pyh2o. If libh2o-evloop is not installed, :code:`CFLAGS` and
-:code:`LDFLAGS` need to be modified.
+   :code:`LDFLAGS` need to be modified.
