@@ -1,5 +1,5 @@
 from cpython cimport Py_INCREF
-from libc.stdint cimport uint16_t
+from libc.stdint cimport uint16_t, INT32_MAX
 cimport ch2o
 
 
@@ -55,13 +55,14 @@ cdef class Path:
         self.config.handler_refs.append(handler_func)
 
 
-cdef int _handler_on_req(ch2o.h2o_handler_t* handler, ch2o.h2o_req_t* req):
+cdef int _handler_on_req(ch2o.h2o_handler_t* handler, ch2o.h2o_req_t* req) nogil:
     data = (<ch2o.pyh2o_handler_t*>handler).data
-    body = (<object>data)()
+    with gil:
+        body = (<object>data)()
 
-    # TODO(iceboy): header, streaming, etc.
-    req.res.status = 200
-    ch2o.h2o_send_inline(req, body, len(body))
+        # TODO(iceboy): header, streaming, etc.
+        req.res.status = 200
+        ch2o.h2o_send_inline(req, body, len(body))
 
 
 H2O_SOCKET_FLAG_DONT_READ = 0x20
@@ -85,7 +86,10 @@ cdef class Loop:
         # FIXME(iceboy): leak
 
     def run(self):
-        return ch2o.h2o_evloop_run(self.loop)
+        cdef ch2o.h2o_loop_t* loop = self.loop
+        with nogil:
+            result = ch2o.h2o_evloop_run(loop, INT32_MAX)
+        return result
 
 
 cdef _make_accept_context(Loop loop, Config config):

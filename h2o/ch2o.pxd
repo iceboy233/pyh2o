@@ -31,7 +31,7 @@ cdef extern from "h2o.h":
         pass
 
     h2o_loop_t* h2o_evloop_create()
-    int h2o_evloop_run(h2o_loop_t* loop)
+    int h2o_evloop_run(h2o_loop_t* loop, int max_wait) nogil
 
     ctypedef struct h2o_context_t:
         pass
