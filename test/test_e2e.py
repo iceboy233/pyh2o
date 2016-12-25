@@ -12,14 +12,12 @@ class E2eTest(unittest.TestCase):
     def setUp(self):
         config = h2o.Config()
         host = config.add_host(b'default', 65535)
-        host.add_path(SIMPLE_PATH).add_handler(lambda: SIMPLE_BODY)
+        host.add_path(SIMPLE_PATH).add_handler(self.handle_simple)
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
         self.sock.bind(('127.0.0.1', 0))
         self.sock.listen(0)
-        self.url_prefix = (
-            'http://127.0.0.1:{}'.format(self.sock.getsockname()[1]).encode())
 
         self.loop = h2o.Loop()
         self.loop.start_accept(self.sock.fileno(), config)
@@ -30,10 +28,17 @@ class E2eTest(unittest.TestCase):
             pass
 
     def get(self, path):
-        return urllib.request.urlopen((self.url_prefix + path).decode()).read()
+        return urllib.request.urlopen('http://127.0.0.1:{}{}'.format(
+            self.sock.getsockname()[1], path.decode()))
+
+    def handle_simple(self, request):
+        self.assertEqual(request.method, b'GET')
+        self.assertEqual(request.path, SIMPLE_PATH)
+        return SIMPLE_BODY
 
     def test_simple(self):
-        self.assertEqual(self.get(SIMPLE_PATH), SIMPLE_BODY)
+        get_result = self.get(SIMPLE_PATH)
+        self.assertEqual(get_result.read(), SIMPLE_BODY)
 
 if __name__ == '__main__':
     unittest.main()

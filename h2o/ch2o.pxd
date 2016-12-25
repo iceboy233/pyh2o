@@ -4,7 +4,8 @@ from libc.stdint cimport uint16_t
 cdef extern from "h2o.h":
 
     ctypedef struct h2o_iovec_t:
-        pass
+        char* base
+        size_t len
 
     h2o_iovec_t h2o_iovec_init(const void* base, size_t len)
 
@@ -58,6 +59,10 @@ cdef extern from "h2o.h":
         int status
 
     ctypedef struct h2o_req_t:
+        h2o_iovec_t authority
+        h2o_iovec_t method
+        h2o_iovec_t path
+        int version
         h2o_res_t res
 
     void h2o_send_inline(h2o_req_t* req, const char* body, size_t len)

@@ -58,11 +58,37 @@ cdef class Path:
 cdef int _handler_on_req(ch2o.h2o_handler_t* handler, ch2o.h2o_req_t* req) nogil:
     data = (<ch2o.pyh2o_handler_t*>handler).data
     with gil:
-        body = (<object>data)()
+        request = Request()
+        request.req = req
+        body = (<object>data)(request)
 
         # TODO(iceboy): header, streaming, etc.
         req.res.status = 200
         ch2o.h2o_send_inline(req, body, len(body))
+
+
+cdef class Request:
+    cdef ch2o.h2o_req_t* req
+
+    @property
+    def authority(self):
+        return _iovec_to_bytes(&self.req.authority)
+
+    @property
+    def method(self):
+        return _iovec_to_bytes(&self.req.method)
+
+    @property
+    def path(self):
+        return _iovec_to_bytes(&self.req.path)
+
+    @property
+    def version(self):
+        return self.req.version
+
+
+cdef bytes _iovec_to_bytes(ch2o.h2o_iovec_t* iovec):
+    return iovec.base[:iovec.len]
 
 
 H2O_SOCKET_FLAG_DONT_READ = 0x20
