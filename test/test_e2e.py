@@ -17,13 +17,14 @@ class E2eTest(unittest.TestCase):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
         self.sock.bind(('127.0.0.1', 0))
-        self.sock.listen()
-        self.url_prefix = b'http://127.0.0.1:%d' % self.sock.getsockname()[1]
+        self.sock.listen(0)
+        self.url_prefix = (
+            'http://127.0.0.1:{}'.format(self.sock.getsockname()[1]).encode())
 
         self.loop = h2o.Loop()
         self.loop.start_accept(self.sock.fileno(), config)
         threading.Thread(target=self.run_loop, daemon=True).start()
-    
+
     def run_loop(self):
         while self.loop.run() == 0:
             pass
