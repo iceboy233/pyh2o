@@ -34,7 +34,8 @@ class E2eTest(unittest.TestCase):
     def handle_simple(self, request):
         self.assertEqual(request.method, b'GET')
         self.assertEqual(request.path, SIMPLE_PATH)
-        return SIMPLE_BODY
+        request.res_status = 200
+        request.send_inline(SIMPLE_BODY)
 
     def test_simple(self):
         get_result = self.get(SIMPLE_PATH)

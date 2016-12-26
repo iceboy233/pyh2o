@@ -52,11 +52,7 @@ cdef int _handler_on_req(ch2o.h2o_handler_t* handler, ch2o.h2o_req_t* req) nogil
     with gil:
         request = Request()
         request.req = req
-        body = (<object>data)(request)
-
-        # TODO(iceboy): header, streaming, etc.
-        req.res.status = 200
-        ch2o.h2o_send_inline(req, body, len(body))
+        (<object>data)(request)
 
 
 cdef class Request:
@@ -77,6 +73,16 @@ cdef class Request:
     @property
     def version(self):
         return self.req.version
+
+    property res_status:
+        def __get__(self):
+            return self.req.res.status
+
+        def __set__(self, int value):
+            self.req.res.status = value
+
+    def send_inline(self, bytes body):
+        ch2o.h2o_send_inline(self.req, body, len(body))
 
 
 cdef bytes _iovec_to_bytes(ch2o.h2o_iovec_t* iovec):
