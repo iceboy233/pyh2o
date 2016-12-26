@@ -1,5 +1,5 @@
-from cpython cimport Py_INCREF
-from libc.stdint cimport uint16_t, INT32_MAX
+from cpython cimport Py_INCREF, Py_DECREF
+from libc.stdint cimport uint16_t, intptr_t, INT32_MAX
 cimport ch2o
 
 
@@ -33,29 +33,34 @@ cdef class Host:
         return result
 
 
+ctypedef struct pyh2o_handler_t:
+    ch2o.h2o_handler_t base
+    void* data
+
+
 cdef class Path:
     cdef Config config  # keeps reference for pathconf
     cdef ch2o.h2o_pathconf_t* pathconf
 
     def add_handler(self, type handler_type):
-        handler = <ch2o.pyh2o_handler_t*>ch2o.h2o_create_handler(
-            self.pathconf, sizeof(ch2o.pyh2o_handler_t))
+        handler = <pyh2o_handler_t*>ch2o.h2o_create_handler(
+            self.pathconf, sizeof(pyh2o_handler_t))
         handler.base.on_req = _handler_on_req
         handler.data = <void*>handler_type
 
 
 cdef int _handler_on_req(ch2o.h2o_handler_t* self, ch2o.h2o_req_t* req) nogil:
-    data = (<ch2o.pyh2o_handler_t*>self).data
+    data = (<pyh2o_handler_t*>self).data
     with gil:
         handler = <Handler>(<object>data)()
         handler.req = req
-        handler()
+        handler.on_req()
 
 
 cdef class Handler:
     cdef ch2o.h2o_req_t* req
 
-    def __call__(self):
+    def on_req(self):
         pass
 
     @property
@@ -87,6 +92,57 @@ cdef class Handler:
 
 cdef bytes _iovec_to_bytes(ch2o.h2o_iovec_t* iovec):
     return iovec.base[:iovec.len]
+
+
+H2O_SEND_STATE_IN_PROGRESS = 0
+H2O_SEND_STATE_FINAL = 1
+H2O_SEND_STATE_ERROR = 2
+
+
+cdef class StreamHandler(Handler):
+    cdef ch2o.h2o_generator_t generator
+
+    def on_proceed(self):
+        pass
+
+    def on_stop(self):
+        pass
+
+    def start_response(self):
+        self.generator.proceed = _stream_handler_on_proceed
+        self.generator.stop = _stream_handler_on_stop
+        ch2o.h2o_start_response(self.req, &self.generator)
+        Py_INCREF(self)
+
+    def send(self, bodies, int send_state):
+        bufcnt = len(bodies)
+        cdef ch2o.h2o_iovec_t* bufs = (
+            <ch2o.h2o_iovec_t*>ch2o.alloca(bufcnt * sizeof(ch2o.h2o_iovec_t)))
+        for i in range(bufcnt):
+            bufs[i].base = <char*>bodies[i]
+            bufs[i].len = len(bodies[i])
+        ch2o.h2o_send(self.req, bufs, bufcnt, send_state)
+        if send_state != H2O_SEND_STATE_IN_PROGRESS:
+            Py_DECREF(self)
+
+
+cdef StreamHandler _generator_to_stream_handler(ch2o.h2o_generator_t* generator):
+    result = <StreamHandler><void*>(<intptr_t>generator -
+                                    <intptr_t>&(<StreamHandler>NULL).generator)
+    Py_INCREF(result)
+    return result
+
+
+cdef void _stream_handler_on_proceed(ch2o.h2o_generator_t* generator,
+                                     ch2o.h2o_req_t* req) nogil:
+    with gil:
+        _generator_to_stream_handler(generator).on_proceed()
+
+
+cdef void _stream_handler_on_stop(ch2o.h2o_generator_t* generator,
+                                  ch2o.h2o_req_t* req) nogil:
+    with gil:
+        _generator_to_stream_handler(generator).on_stop()
 
 
 H2O_SOCKET_FLAG_DONT_READ = 0x20

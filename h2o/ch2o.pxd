@@ -65,9 +65,12 @@ cdef extern from "h2o.h":
         int version
         h2o_res_t res
 
+    ctypedef struct h2o_generator_t:
+        void (*proceed)(h2o_generator_t* self, h2o_req_t* req)
+        void (*stop)(h2o_generator_t* self, h2o_req_t* req)
+
+    void h2o_start_response(h2o_req_t* req, h2o_generator_t* generator)
+    void h2o_send(h2o_req_t* req, h2o_iovec_t* bufs, size_t bufcnt, int state)
     void h2o_send_inline(h2o_req_t* req, const char* body, size_t len)
 
-
-ctypedef struct pyh2o_handler_t:
-    h2o_handler_t base
-    void* data
+    void* alloca(size_t size)

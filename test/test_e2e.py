@@ -6,12 +6,30 @@ import urllib.request
 
 SIMPLE_PATH = b'/simple'
 SIMPLE_BODY = b'<h1>It works!</h1>'
+STREAM_PATH = b'/stream'
+STREAM_BODIES = [b'<h1>', b'Stream', b'</h1>']
 
 
 class SimpleHandler(h2o.Handler):
-    def __call__(self):
+    def on_req(self):
         self.res_status = 200
         self.send_inline(SIMPLE_BODY)
+
+
+class StreamHandler(h2o.StreamHandler):
+    def __init__(self):
+        self.iterator = iter(STREAM_BODIES)
+
+    def on_req(self):
+        self.res_status = 200
+        self.start_response()
+        self.on_proceed()
+
+    def on_proceed(self):
+        try:
+            self.send([next(self.iterator)], h2o.H2O_SEND_STATE_IN_PROGRESS)
+        except StopIteration:
+            self.send([], h2o.H2O_SEND_STATE_FINAL)
 
 
 class E2eTest(unittest.TestCase):
@@ -19,6 +37,7 @@ class E2eTest(unittest.TestCase):
         config = h2o.Config()
         host = config.add_host(b'default', 65535)
         host.add_path(SIMPLE_PATH).add_handler(SimpleHandler)
+        host.add_path(STREAM_PATH).add_handler(StreamHandler)
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
@@ -40,6 +59,10 @@ class E2eTest(unittest.TestCase):
     def test_simple(self):
         get_result = self.get(SIMPLE_PATH)
         self.assertEqual(get_result.read(), SIMPLE_BODY)
+
+    def test_stream(self):
+        get_result = self.get(STREAM_PATH)
+        self.assertEqual(get_result.read(), b''.join(STREAM_BODIES))
 
 if __name__ == '__main__':
     unittest.main()
