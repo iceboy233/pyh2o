@@ -17,14 +17,10 @@ cdef class Config:
     def add_host(self, bytes host, uint16_t port):
         hostconf = ch2o.h2o_config_register_host(
             &self.conf, ch2o.h2o_iovec_init(<char*>host, len(host)), port)
-        return _make_host(self, hostconf)
-
-
-cdef _make_host(Config config, ch2o.h2o_hostconf_t* hostconf):
-    host = Host()
-    host.config = config
-    host.hostconf = hostconf
-    return host
+        result = Host()
+        result.config = self
+        result.hostconf = hostconf
+        return result
 
 
 cdef class Host:
@@ -33,14 +29,10 @@ cdef class Host:
 
     def add_path(self, bytes path, int flags=0):
         pathconf = ch2o.h2o_config_register_path(self.hostconf, path, flags)
-        return _make_path(self.config, pathconf)
-
-
-cdef _make_path(Config config, ch2o.h2o_pathconf_t* pathconf):
-    path = Path()
-    path.config = config
-    path.pathconf = pathconf
-    return path
+        result = Path()
+        result.config = self.config
+        result.pathconf = pathconf
+        return result
 
 
 cdef class Path:
@@ -103,9 +95,14 @@ cdef class Loop:
     def __dealloc__(self):
         pass  # FIXME(iceboy): leak
 
-    def start_accept(self, int sockfd, config, int flags=H2O_SOCKET_FLAG_DONT_READ):
+    def start_accept(self, int sockfd, Config config,
+                     int flags=H2O_SOCKET_FLAG_DONT_READ):
         sock = ch2o.h2o_evloop_socket_create(self.loop, sockfd, flags)
-        accept_context = _make_accept_context(self, config)
+        accept_context = _AcceptContext()
+        accept_context.config = config
+        ch2o.h2o_context_init(&accept_context.context, self.loop, &config.conf)
+        accept_context.accept_ctx.ctx = &accept_context.context
+        accept_context.accept_ctx.hosts = config.conf.hosts
         Py_INCREF(accept_context)
         sock.data = <void*>accept_context
         ch2o.h2o_socket_read_start(sock, _socket_on_read)
@@ -116,15 +113,6 @@ cdef class Loop:
         with nogil:
             result = ch2o.h2o_evloop_run(loop, INT32_MAX)
         return result
-
-
-cdef _make_accept_context(Loop loop, Config config):
-    accept_context = _AcceptContext()
-    accept_context.config = config
-    ch2o.h2o_context_init(&accept_context.context, loop.loop, &config.conf)
-    accept_context.accept_ctx.ctx = &accept_context.context
-    accept_context.accept_ctx.hosts = config.conf.hosts
-    return accept_context
 
 
 cdef class _AcceptContext:
