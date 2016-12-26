@@ -5,11 +5,9 @@ cimport ch2o
 
 cdef class Config:
     cdef ch2o.h2o_globalconf_t conf
-    cdef list handler_refs
 
     def __cinit__(self):
         ch2o.h2o_config_init(&self.conf)
-        self.handler_refs = list()
 
     def __dealloc__(self):
         ch2o.h2o_config_dispose(&self.conf)
@@ -39,24 +37,26 @@ cdef class Path:
     cdef Config config  # keeps reference for pathconf
     cdef ch2o.h2o_pathconf_t* pathconf
 
-    def add_handler(self, handler_func):
+    def add_handler(self, type handler_type):
         handler = <ch2o.pyh2o_handler_t*>ch2o.h2o_create_handler(
             self.pathconf, sizeof(ch2o.pyh2o_handler_t))
         handler.base.on_req = _handler_on_req
-        handler.data = <void*>handler_func
-        self.config.handler_refs.append(handler_func)
+        handler.data = <void*>handler_type
 
 
-cdef int _handler_on_req(ch2o.h2o_handler_t* handler, ch2o.h2o_req_t* req) nogil:
-    data = (<ch2o.pyh2o_handler_t*>handler).data
+cdef int _handler_on_req(ch2o.h2o_handler_t* self, ch2o.h2o_req_t* req) nogil:
+    data = (<ch2o.pyh2o_handler_t*>self).data
     with gil:
-        request = Request()
-        request.req = req
-        (<object>data)(request)
+        handler = <Handler>(<object>data)()
+        handler.req = req
+        handler()
 
 
-cdef class Request:
+cdef class Handler:
     cdef ch2o.h2o_req_t* req
+
+    def __call__(self):
+        pass
 
     @property
     def authority(self):

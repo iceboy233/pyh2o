@@ -8,11 +8,17 @@ SIMPLE_PATH = b'/simple'
 SIMPLE_BODY = b'<h1>It works!</h1>'
 
 
+class SimpleHandler(h2o.Handler):
+    def __call__(self):
+        self.res_status = 200
+        self.send_inline(SIMPLE_BODY)
+
+
 class E2eTest(unittest.TestCase):
     def setUp(self):
         config = h2o.Config()
         host = config.add_host(b'default', 65535)
-        host.add_path(SIMPLE_PATH).add_handler(self.handle_simple)
+        host.add_path(SIMPLE_PATH).add_handler(SimpleHandler)
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
@@ -30,12 +36,6 @@ class E2eTest(unittest.TestCase):
     def get(self, path):
         return urllib.request.urlopen('http://127.0.0.1:{}{}'.format(
             self.sock.getsockname()[1], path.decode()))
-
-    def handle_simple(self, request):
-        self.assertEqual(request.method, b'GET')
-        self.assertEqual(request.path, SIMPLE_PATH)
-        request.res_status = 200
-        request.send_inline(SIMPLE_BODY)
 
     def test_simple(self):
         get_result = self.get(SIMPLE_PATH)
