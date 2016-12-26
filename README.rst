@@ -19,6 +19,6 @@ Build
 
 Test
 ----
-Use :code:`python3 -m unittest` to run tests.
+Use :code:`make test` to run tests.
 
 End to end test brings up a real server and make requests to it.
