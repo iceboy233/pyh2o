@@ -54,7 +54,7 @@ cdef int _handler_on_req(ch2o.h2o_handler_t* self, ch2o.h2o_req_t* req) nogil:
     with gil:
         handler = <Handler>(<object>data)()
         handler.req = req
-        handler.on_req()
+        return handler.on_req()
 
 
 cdef class Handler:

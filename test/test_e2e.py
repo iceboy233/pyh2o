@@ -14,6 +14,7 @@ class SimpleHandler(h2o.Handler):
     def on_req(self):
         self.res_status = 200
         self.send_inline(SIMPLE_BODY)
+        return 0
 
 
 class StreamHandler(h2o.StreamHandler):
@@ -24,6 +25,7 @@ class StreamHandler(h2o.StreamHandler):
         self.res_status = 200
         self.start_response()
         self.on_proceed()
+        return 0
 
     def on_proceed(self):
         try:
