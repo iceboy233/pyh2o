@@ -23,12 +23,15 @@ class build_ext(_build_ext):
         h2o_repo_dir = os.path.abspath(
             os.path.join(os.path.dirname(__file__), 'deps', 'h2o'))
         h2o_build_dir = os.path.join(self.build_temp, 'h2o')
-        os.makedirs(h2o_build_dir, exist_ok=True)
+        try:
+            os.makedirs(h2o_build_dir)
+        except OSError:
+            pass
         spawn(['cmake', h2o_repo_dir], h2o_build_dir, [('CFLAGS', '-fPIC')])
         spawn(['make', 'libh2o-evloop'], h2o_build_dir, [])
         self.include_dirs.append(os.path.join(h2o_repo_dir, 'include'))
         self.library_dirs.append(h2o_build_dir)
-        return super().run()
+        return _build_ext.run(self)
 
 
 setup(

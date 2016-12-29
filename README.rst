@@ -11,8 +11,9 @@ Think of high performance, interaction with ``asyncio``, etc.
 
 Prerequisites
 -------------
-* Python 3+
-* openssl
+* Python 2.6 or 3.2+
+* cmake 2.8.12+
+* openssl 1.0.2+
 
 Development
 -----------

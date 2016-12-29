@@ -2,7 +2,7 @@ import h2o
 import socket
 import threading
 import unittest
-import urllib.request
+from six.moves import urllib
 
 SIMPLE_PATH = b'/simple'
 SIMPLE_BODY = b'<h1>It works!</h1>'
@@ -48,7 +48,9 @@ class E2eTest(unittest.TestCase):
 
         self.loop = h2o.Loop()
         self.loop.start_accept(self.sock.fileno(), config)
-        threading.Thread(target=self.run_loop, daemon=True).start()
+        thread = threading.Thread(target=self.run_loop)
+        thread.daemon = True
+        thread.start()
 
     def run_loop(self):
         while self.loop.run() == 0:

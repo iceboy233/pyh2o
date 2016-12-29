@@ -1,10 +1,12 @@
 .PHONY: build test clean
 
+PYTHON ?= python
+
 build:
-	python3 setup.py build_ext --inplace
+	${PYTHON} setup.py build_ext --inplace
 
 test: build
-	python3 -m unittest
+	${PYTHON} -m unittest
 
 clean:
-	python3 setup.py clean
+	${PYTHON} setup.py clean
