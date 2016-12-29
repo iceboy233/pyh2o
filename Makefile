@@ -6,7 +6,7 @@ build:
 	${PYTHON} setup.py build_ext --inplace
 
 test: build
-	${PYTHON} -m unittest
+	${PYTHON} -m unittest discover
 
 clean:
 	${PYTHON} setup.py clean
