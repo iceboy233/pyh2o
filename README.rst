@@ -1,3 +1,8 @@
+pyh2o
+=====
+.. image:: https://travis-ci.org/iceb0y/pyh2o.svg?branch=master
+    :target: https://travis-ci.org/iceb0y/pyh2o
+
 The pyh2o module provides Python binding for the `H2O HTTP server
 <https://github.com/h2o/h2o>`_.
 
