@@ -11,7 +11,7 @@ Think of high performance, interaction with ``asyncio``, etc.
 
 Prerequisites
 -------------
-* Python 2.7 or 3.2+
+* Python 2.6+ or 3.2+
 * cmake 2.8.12+
 * openssl 1.0.2+
 
@@ -19,6 +19,7 @@ Development
 -----------
 Initialize submodules by :code:`git submodule update --init`.
 
-Use :code:`make` to build, :code:`make clean` to clean, and :code:`make test` to run tests.
+Use :code:`python setup.py build` to build, :code:`python setup.py clean` to
+clean, and :code:`python setup.py test` to run tests.
 
 End to end test brings up a real server and make requests to it.

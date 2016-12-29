@@ -18,10 +18,8 @@ class SimpleHandler(h2o.Handler):
 
 
 class StreamHandler(h2o.StreamHandler):
-    def __init__(self):
-        self.iterator = iter(STREAM_BODIES)
-
     def on_req(self):
+        self.iterator = iter(STREAM_BODIES)
         self.res_status = 200
         self.start_response()
         self.on_proceed()

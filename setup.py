@@ -1,9 +1,8 @@
 import os, os.path
 from Cython.Build import cythonize
-from distutils.command.build_ext import build_ext as _build_ext
-from distutils.core import setup
-from distutils.errors import DistutilsExecError
-from distutils.extension import Extension
+from setuptools import setup
+from setuptools.command.build_ext import build_ext as _build_ext
+from setuptools.extension import Extension
 from subprocess import Popen
 
 
@@ -14,7 +13,7 @@ def spawn(args, cwd, env):
     p = Popen(args, cwd=cwd, env=combined_env)
     p.wait()
     if p.returncode != 0:
-        raise DistutilsExecError('command {} failed with exit status {}'.format(
+        raise Exception('command {} failed with exit status {}'.format(
             args[0], p.returncode))
 
 
@@ -46,5 +45,6 @@ setup(
             define_macros=[('H2O_USE_LIBUV', 0)],
         ),
     ]),
+    test_suite = 'test',
     cmdclass = {'build_ext': build_ext},
 )
