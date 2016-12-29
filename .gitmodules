@@ -1,0 +1,3 @@
+[submodule "deps/h2o"]
+	path = deps/h2o
+	url = https://github.com/h2o/h2o.git
