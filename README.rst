@@ -7,18 +7,12 @@ Think of high performance, interaction with ``asyncio``, etc.
 Prerequisites
 -------------
 * Python 3+
-* h2o 2.1+
+* openssl
 
-Build
------
-1. Use :code:`cmake -DBUILD_SHARED_LIBS=ON` to configure, :code:`make`
-   libh2o-evloop.
-2. (Optional) :code:`make install` libh2o-evloop.
-3. :code:`make` pyh2o. If libh2o-evloop is not installed, :code:`CFLAGS` and
-   :code:`LDFLAGS` need to be modified.
+Development
+-----------
+Initialize submodules by :code:`git submodule update --init`.
 
-Test
-----
-Use :code:`make test` to run tests.
+Use :code:`make` to build, :code:`make clean` to clean, and :code:`make test` to run tests.
 
 End to end test brings up a real server and make requests to it.
