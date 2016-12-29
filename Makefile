@@ -1,4 +1,4 @@
-.PHONY: build test
+.PHONY: build test clean
 
 build:
 	python3 setup.py build_ext --inplace
