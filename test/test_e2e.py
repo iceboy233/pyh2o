@@ -55,7 +55,7 @@ class E2eTest(unittest.TestCase):
             pass
 
     def get(self, path):
-        return urllib.request.urlopen('http://127.0.0.1:{}{}'.format(
+        return urllib.request.urlopen('http://127.0.0.1:{0}{1}'.format(
             self.sock.getsockname()[1], path.decode()))
 
     def test_simple(self):
