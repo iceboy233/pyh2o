@@ -74,3 +74,21 @@ cdef extern from "h2o.h":
     void h2o_send_inline(h2o_req_t* req, const char* body, size_t len)
 
     void* alloca(size_t size)
+
+
+cdef extern from "h2o/websocket.h":
+
+    ctypedef struct h2o_websocket_conn_t:
+        void* data
+
+    struct wslay_event_on_msg_recv_arg:
+        pass
+
+    int h2o_is_websocket_handshake(h2o_req_t* req, const char** client_key)
+
+    ctypedef void (*h2o_websocket_msg_callback)(h2o_websocket_conn_t* conn,
+                                                const wslay_event_on_msg_recv_arg* arg)
+    h2o_websocket_conn_t* h2o_upgrade_to_websocket(
+        h2o_req_t* req, const char* client_key, void* user_data,
+        h2o_websocket_msg_callback msg_cb)
+    void h2o_websocket_close(h2o_websocket_conn_t* conn)

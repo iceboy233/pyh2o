@@ -145,6 +145,29 @@ cdef void _stream_handler_on_stop(ch2o.h2o_generator_t* generator,
         _generator_to_stream_handler(generator).on_stop()
 
 
+cdef class WebsocketHandler(Handler):
+    def on_req(self):
+        cdef const char* client_key
+        if (ch2o.h2o_is_websocket_handshake(self.req, &client_key) != 0 or
+            client_key == NULL):
+            return -1
+        ch2o.h2o_upgrade_to_websocket(self.req, client_key, <void*>self,
+                                      _websocket_handler_on_message)
+        Py_INCREF(self)
+        return 0
+
+
+cdef void _websocket_handler_on_message(
+    ch2o.h2o_websocket_conn_t* conn,
+    const ch2o.wslay_event_on_msg_recv_arg* arg) nogil:
+    with gil:
+        handler = <WebsocketHandler>conn.data
+        if arg == NULL:
+            ch2o.h2o_websocket_close(conn)
+            Py_DECREF(handler)
+            return
+
+
 H2O_SOCKET_FLAG_DONT_READ = 0x20
 
 

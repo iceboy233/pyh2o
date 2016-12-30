@@ -3,11 +3,13 @@ import socket
 import threading
 import unittest
 from six.moves import urllib
+from websocket import create_connection
 
 SIMPLE_PATH = b'/simple'
 SIMPLE_BODY = b'<h1>It works!</h1>'
 STREAM_PATH = b'/stream'
 STREAM_BODIES = [b'<h1>', b'Stream', b'</h1>']
+WEBSOCKET_PATH = b'/websocket'
 
 
 class SimpleHandler(h2o.Handler):
@@ -32,12 +34,17 @@ class StreamHandler(h2o.StreamHandler):
             self.send([], h2o.H2O_SEND_STATE_FINAL)
 
 
+class WebsocketHandler(h2o.WebsocketHandler):
+    pass
+
+
 class E2eTest(unittest.TestCase):
     def setUp(self):
         config = h2o.Config()
         host = config.add_host(b'default', 65535)
         host.add_path(SIMPLE_PATH).add_handler(SimpleHandler)
         host.add_path(STREAM_PATH).add_handler(StreamHandler)
+        host.add_path(WEBSOCKET_PATH).add_handler(WebsocketHandler)
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
@@ -54,17 +61,26 @@ class E2eTest(unittest.TestCase):
         while self.loop.run() == 0:
             pass
 
-    def get(self, path):
-        return urllib.request.urlopen('http://127.0.0.1:{0}{1}'.format(
-            self.sock.getsockname()[1], path.decode()))
+    def format_path(self, scheme, path):
+        return '{0}://127.0.0.1:{1}{2}'.format(
+            scheme, self.sock.getsockname()[1], path.decode())
+
+    def http_get(self, path):
+        return urllib.request.urlopen(self.format_path('http', path))
+
+    def ws_connect(self, path):
+        return create_connection(self.format_path('ws', path))
 
     def test_simple(self):
-        get_result = self.get(SIMPLE_PATH)
-        self.assertEqual(get_result.read(), SIMPLE_BODY)
+        response = self.http_get(SIMPLE_PATH)
+        self.assertEqual(response.read(), SIMPLE_BODY)
 
     def test_stream(self):
-        get_result = self.get(STREAM_PATH)
-        self.assertEqual(get_result.read(), b''.join(STREAM_BODIES))
+        response = self.http_get(STREAM_PATH)
+        self.assertEqual(response.read(), b''.join(STREAM_BODIES))
+
+    def test_websocket(self):
+        ws = self.ws_connect(WEBSOCKET_PATH)
 
 if __name__ == '__main__':
     unittest.main()

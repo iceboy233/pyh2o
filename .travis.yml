@@ -9,5 +9,5 @@ python:
   - "3.5"
   - "3.6-dev"
 
-install: pip install cython
+install: pip install cython websocket-client
 script: python setup.py test
