@@ -119,7 +119,7 @@ cdef class StreamHandler(Handler):
         cdef ch2o.h2o_iovec_t* bufs = (
             <ch2o.h2o_iovec_t*>ch2o.alloca(bufcnt * sizeof(ch2o.h2o_iovec_t)))
         for i in range(bufcnt):
-            bufs[i].base = <char*>bodies[i]
+            bufs[i].base = bodies[i]
             bufs[i].len = len(bodies[i])
         ch2o.h2o_send(self.req, bufs, bufcnt, send_state)
         if send_state != H2O_SEND_STATE_IN_PROGRESS:
@@ -146,6 +146,8 @@ cdef void _stream_handler_on_stop(ch2o.h2o_generator_t* generator,
 
 
 cdef class WebsocketHandler(Handler):
+    cdef ch2o.h2o_websocket_conn_t* conn
+
     def on_req(self):
         cdef const char* client_key
         if (ch2o.h2o_is_websocket_handshake(self.req, &client_key) != 0 or
@@ -155,6 +157,16 @@ cdef class WebsocketHandler(Handler):
                                       _websocket_handler_on_message)
         Py_INCREF(self)
         return 0
+
+    def on_message(self, message):
+        pass
+
+    def send(self, int opcode, bytes msg):
+        cdef ch2o.wslay_event_msg msgarg
+        msgarg.opcode = opcode
+        msgarg.msg = msg
+        msgarg.msg_length = len(msg)
+        ch2o.wslay_event_queue_msg(self.conn.ws_ctx, &msgarg)
 
 
 cdef void _websocket_handler_on_message(
@@ -166,6 +178,8 @@ cdef void _websocket_handler_on_message(
             ch2o.h2o_websocket_close(conn)
             Py_DECREF(handler)
             return
+        handler.conn = conn
+        handler.on_message(arg.opcode, arg.msg[:arg.msg_length])
 
 
 H2O_SOCKET_FLAG_DONT_READ = 0x20

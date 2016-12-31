@@ -10,6 +10,7 @@ SIMPLE_BODY = b'<h1>It works!</h1>'
 STREAM_PATH = b'/stream'
 STREAM_BODIES = [b'<h1>', b'Stream', b'</h1>']
 WEBSOCKET_PATH = b'/websocket'
+WEBSOCKET_MESSAGE = b'hello'
 
 
 class SimpleHandler(h2o.Handler):
@@ -35,7 +36,8 @@ class StreamHandler(h2o.StreamHandler):
 
 
 class WebsocketHandler(h2o.WebsocketHandler):
-    pass
+    def on_message(self, opcode, msg):
+        self.send(opcode, msg)
 
 
 class E2eTest(unittest.TestCase):
@@ -81,6 +83,8 @@ class E2eTest(unittest.TestCase):
 
     def test_websocket(self):
         ws = self.ws_connect(WEBSOCKET_PATH)
+        ws.send_binary(WEBSOCKET_MESSAGE)
+        self.assertEqual(ws.recv(), WEBSOCKET_MESSAGE)
 
 if __name__ == '__main__':
     unittest.main()

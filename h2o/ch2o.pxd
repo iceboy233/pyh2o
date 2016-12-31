@@ -1,4 +1,4 @@
-from libc.stdint cimport uint16_t
+from libc.stdint cimport uint8_t, uint16_t
 
 
 cdef extern from "h2o.h":
@@ -76,16 +76,31 @@ cdef extern from "h2o.h":
     void* alloca(size_t size)
 
 
+cdef extern from "wslay/wslay.h":
+
+    struct wslay_event_context
+    ctypedef wslay_event_context *wslay_event_context_ptr
+
+    struct wslay_event_msg:
+        uint8_t opcode
+        const uint8_t* msg
+        size_t msg_length
+
+    struct wslay_event_on_msg_recv_arg:
+        uint8_t opcode
+        const uint8_t* msg
+        size_t msg_length
+
+    int wslay_event_queue_msg(wslay_event_context_ptr ctx, const wslay_event_msg* arg)
+
+
 cdef extern from "h2o/websocket.h":
 
     ctypedef struct h2o_websocket_conn_t:
+        wslay_event_context_ptr ws_ctx
         void* data
 
-    struct wslay_event_on_msg_recv_arg:
-        pass
-
     int h2o_is_websocket_handshake(h2o_req_t* req, const char** client_key)
-
     ctypedef void (*h2o_websocket_msg_callback)(h2o_websocket_conn_t* conn,
                                                 const wslay_event_on_msg_recv_arg* arg)
     h2o_websocket_conn_t* h2o_upgrade_to_websocket(
