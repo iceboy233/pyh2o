@@ -7,6 +7,9 @@ from websocket import create_connection
 
 SIMPLE_PATH = b'/simple'
 SIMPLE_BODY = b'<h1>It works!</h1>'
+HEADER_PATH = b'/header'
+HEADER_NAME = b'X-My-Header'
+HEADER_VALUE = b'Hello world!'
 STREAM_PATH = b'/stream'
 STREAM_BODIES = [b'<h1>', b'Stream', b'</h1>']
 WEBSOCKET_PATH = b'/websocket'
@@ -17,6 +20,15 @@ class SimpleHandler(h2o.Handler):
     def on_req(self):
         self.res_status = 200
         self.send_inline(SIMPLE_BODY)
+        return 0
+
+
+class HeaderHandler(h2o.Handler):
+    def on_req(self):
+        assert dict(self.headers())[HEADER_NAME.lower()] == HEADER_VALUE
+        assert next(self.find_headers(HEADER_NAME.lower())) == HEADER_VALUE
+        self.res_status = 200
+        self.send_inline(b'')
         return 0
 
 
@@ -45,6 +57,7 @@ class E2eTest(unittest.TestCase):
         config = h2o.Config()
         host = config.add_host(b'default', 65535)
         host.add_path(SIMPLE_PATH).add_handler(SimpleHandler)
+        host.add_path(HEADER_PATH).add_handler(HeaderHandler)
         host.add_path(STREAM_PATH).add_handler(StreamHandler)
         host.add_path(WEBSOCKET_PATH).add_handler(WebsocketHandler)
 
@@ -67,8 +80,9 @@ class E2eTest(unittest.TestCase):
         return '{0}://127.0.0.1:{1}{2}'.format(
             scheme, self.sock.getsockname()[1], path.decode())
 
-    def http_get(self, path):
-        return urllib.request.urlopen(self.format_path('http', path))
+    def http_get(self, path, headers={}):
+        return urllib.request.urlopen(urllib.request.Request(
+            self.format_path('http', path), headers=headers))
 
     def ws_connect(self, path):
         return create_connection(self.format_path('ws', path))
@@ -76,6 +90,9 @@ class E2eTest(unittest.TestCase):
     def test_simple(self):
         response = self.http_get(SIMPLE_PATH)
         self.assertEqual(response.read(), SIMPLE_BODY)
+
+    def test_header(self):
+        self.http_get(HEADER_PATH, {HEADER_NAME: HEADER_VALUE})
 
     def test_stream(self):
         response = self.http_get(STREAM_PATH)

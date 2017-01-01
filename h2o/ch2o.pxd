@@ -55,6 +55,14 @@ cdef extern from "h2o.h":
 
     void h2o_accept(h2o_accept_ctx_t* ctx, h2o_socket_t* sock)
 
+    ctypedef struct h2o_header_t:
+        h2o_iovec_t* name
+        h2o_iovec_t value
+
+    ctypedef struct h2o_headers_t:
+        h2o_header_t* entries
+        size_t size
+
     ctypedef struct h2o_res_t:
         int status
 
@@ -63,6 +71,7 @@ cdef extern from "h2o.h":
         h2o_iovec_t method
         h2o_iovec_t path
         int version
+        h2o_headers_t headers
         h2o_res_t res
 
     ctypedef struct h2o_generator_t:
@@ -72,6 +81,9 @@ cdef extern from "h2o.h":
     void h2o_start_response(h2o_req_t* req, h2o_generator_t* generator)
     void h2o_send(h2o_req_t* req, h2o_iovec_t* bufs, size_t bufcnt, int state)
     void h2o_send_inline(h2o_req_t* req, const char* body, size_t len)
+
+    ssize_t h2o_find_header_by_str(const h2o_headers_t* headers, const char* name,
+                                   size_t name_len, ssize_t cursor);
 
     void* alloca(size_t size)
 

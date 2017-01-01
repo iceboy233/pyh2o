@@ -1,5 +1,5 @@
 from cpython cimport Py_INCREF, Py_DECREF
-from libc.stdint cimport uint16_t, intptr_t, INT32_MAX
+from libc.stdint cimport uint16_t, intptr_t, INT32_MAX, SIZE_MAX
 cimport ch2o
 
 
@@ -78,6 +78,23 @@ cdef class Handler:
     @property
     def version(self):
         return self.req.version
+
+    def headers(self):
+        headers = &self.req.headers
+        for index in range(headers.size):
+            header = headers.entries[index]
+            yield (header.name.base[:header.name.len],
+                   header.value.base[:header.value.len])
+
+    def find_headers(self, bytes name):
+        headers = &self.req.headers
+        index = SIZE_MAX
+        while True:
+            index = ch2o.h2o_find_header_by_str(headers, name, len(name), index)
+            if index == SIZE_MAX:
+                break
+            header = headers.entries[index]
+            yield header.value.base[:header.value.len]
 
     property res_status:
         def __get__(self):
