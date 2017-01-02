@@ -83,8 +83,7 @@ cdef class Handler:
         headers = &self.req.headers
         for index in range(headers.size):
             header = headers.entries[index]
-            yield (header.name.base[:header.name.len],
-                   header.value.base[:header.value.len])
+            yield _iovec_to_bytes(header.name), _iovec_to_bytes(&header.value)
 
     def find_headers(self, bytes name):
         headers = &self.req.headers
@@ -94,7 +93,7 @@ cdef class Handler:
             if index == SIZE_MAX:
                 break
             header = headers.entries[index]
-            yield header.value.base[:header.value.len]
+            yield _iovec_to_bytes(&header.value)
 
     property res_status:
         def __get__(self):
@@ -107,7 +106,7 @@ cdef class Handler:
         ch2o.h2o_send_inline(self.req, body, len(body))
 
 
-cdef bytes _iovec_to_bytes(ch2o.h2o_iovec_t* iovec):
+cdef inline bytes _iovec_to_bytes(ch2o.h2o_iovec_t* iovec):
     return iovec.base[:iovec.len]
 
 
