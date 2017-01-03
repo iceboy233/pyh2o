@@ -4,4 +4,4 @@
 __pycache__/
 /build/
 /dist/
-/h2o.egg-info/
+/*.egg-info/

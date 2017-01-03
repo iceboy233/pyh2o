@@ -45,7 +45,7 @@ class build_ext(_build_ext):
 
 
 setup(
-    name = 'h2o',
+    name = 'pyh2o',
     version = '0.0.1',
     description = 'H2O HTTP server library',
     url = 'https://github.com/iceb0y/pyh2o',
