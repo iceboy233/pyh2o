@@ -13,9 +13,14 @@ Prerequisites
 * cmake 2.8.12+
 * openssl 1.0.2+
 
-Getting Started
----------------
-Initialize submodules by :code:`git submodule update --init --recursive`.
+Installation
+------------
+
+:code:`pip install pyh2o`
+
+Development
+-----------
+Clone the repository, initialize submodules by :code:`git submodule update --init --recursive`.
 
 * Build: :code:`python setup.py build`
 * Test: :code:`python setup.py test`
