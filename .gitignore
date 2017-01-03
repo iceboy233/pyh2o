@@ -3,4 +3,5 @@
 *.pyc
 __pycache__/
 /build/
+/dist/
 /h2o.egg-info/

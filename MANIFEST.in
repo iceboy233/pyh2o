@@ -1,0 +1,3 @@
+recursive-include h2o *.pyx *.pxd
+recursive-include deps *
+recursive-exclude deps .git

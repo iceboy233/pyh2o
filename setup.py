@@ -47,7 +47,28 @@ class build_ext(_build_ext):
 setup(
     name = 'h2o',
     version = '0.0.1',
+    description = 'H2O HTTP server library',
+    url = 'https://github.com/iceb0y/pyh2o',
+    author = 'iceboy',
+    author_email = 'me\x40iceboy.org',
+    license = 'MIT',
+    classifiers = [
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers',
+        'Topic :: Internet :: WWW/HTTP :: HTTP Servers',
+        'Topic :: Software Development :: Libraries',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.2',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+    ],
+    keywords = 'h2o http server library',
     packages = ['h2o'],
+    include_package_data = True,
     ext_modules = cythonize([
         Extension(
             'h2o.h2o',
