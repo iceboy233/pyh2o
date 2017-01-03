@@ -65,6 +65,10 @@ cdef extern from "h2o.h":
 
     ctypedef struct h2o_res_t:
         int status
+        h2o_headers_t headers
+
+    ctypedef struct h2o_mem_pool_t:
+        pass
 
     ctypedef struct h2o_req_t:
         h2o_iovec_t authority
@@ -73,6 +77,7 @@ cdef extern from "h2o.h":
         int version
         h2o_headers_t headers
         h2o_res_t res
+        h2o_mem_pool_t pool
 
     ctypedef struct h2o_generator_t:
         void (*proceed)(h2o_generator_t* self, h2o_req_t* req)
@@ -83,7 +88,10 @@ cdef extern from "h2o.h":
     void h2o_send_inline(h2o_req_t* req, const char* body, size_t len)
 
     ssize_t h2o_find_header_by_str(const h2o_headers_t* headers, const char* name,
-                                   size_t name_len, ssize_t cursor);
+                                   size_t name_len, ssize_t cursor)
+    void h2o_add_header_by_str(h2o_mem_pool_t* pool, h2o_headers_t* headers,
+                               const char* name, size_t name_len, int maybe_token,
+                               const char* value, size_t value_len)
 
     void* alloca(size_t size)
 

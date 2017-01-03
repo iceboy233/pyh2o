@@ -95,6 +95,10 @@ cdef class Handler:
             header = headers.entries[index]
             yield _iovec_to_bytes(&header.value)
 
+    def res_add_header(self, bytes name, bytes value):
+        ch2o.h2o_add_header_by_str(&self.req.pool, &self.req.res.headers,
+                                   name, len(name), 1, value, len(value))
+
     property res_status:
         def __get__(self):
             return self.req.res.status

@@ -10,6 +10,7 @@ SIMPLE_BODY = b'<h1>It works!</h1>'
 HEADER_PATH = b'/header'
 HEADER_NAME = b'X-My-Header'
 HEADER_VALUE = b'Hello world!'
+RES_HEADER_PATH = b'/res_header'
 STREAM_PATH = b'/stream'
 STREAM_BODIES = [b'<h1>', b'Stream', b'</h1>']
 WEBSOCKET_PATH = b'/websocket'
@@ -27,6 +28,14 @@ class HeaderHandler(h2o.Handler):
     def on_req(self):
         assert dict(self.headers())[HEADER_NAME.lower()] == HEADER_VALUE
         assert next(self.find_headers(HEADER_NAME.lower())) == HEADER_VALUE
+        self.res_status = 200
+        self.send_inline(b'')
+        return 0
+
+
+class ResHeaderHandler(h2o.Handler):
+    def on_req(self):
+        self.res_add_header(HEADER_NAME, HEADER_VALUE)
         self.res_status = 200
         self.send_inline(b'')
         return 0
@@ -58,6 +67,7 @@ class E2eTest(unittest.TestCase):
         host = config.add_host(b'default', 65535)
         host.add_path(SIMPLE_PATH).add_handler(SimpleHandler)
         host.add_path(HEADER_PATH).add_handler(HeaderHandler)
+        host.add_path(RES_HEADER_PATH).add_handler(ResHeaderHandler)
         host.add_path(STREAM_PATH).add_handler(StreamHandler)
         host.add_path(WEBSOCKET_PATH).add_handler(WebsocketHandler)
 
@@ -93,6 +103,11 @@ class E2eTest(unittest.TestCase):
 
     def test_header(self):
         self.http_get(HEADER_PATH, {HEADER_NAME: HEADER_VALUE})
+
+    def test_res_handler(self):
+        response = self.http_get(RES_HEADER_PATH)
+        self.assertEqual(response.info()[HEADER_NAME.decode()],
+                         HEADER_VALUE.decode())
 
     def test_stream(self):
         response = self.http_get(STREAM_PATH)
