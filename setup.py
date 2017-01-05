@@ -48,6 +48,7 @@ setup(
     name = 'pyh2o',
     version = '0.0.1',
     description = 'H2O HTTP server library',
+    long_description = open('README.rst').read(),
     url = 'https://github.com/iceb0y/pyh2o',
     author = 'iceboy',
     author_email = 'me\x40iceboy.org',
