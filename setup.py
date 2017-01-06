@@ -1,7 +1,7 @@
 import os, os.path
 import sys
-import sysconfig
 from Cython.Build import cythonize
+from distutils import sysconfig
 from setuptools import setup
 from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools.extension import Extension
