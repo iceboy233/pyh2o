@@ -84,7 +84,7 @@ setup(
         Extension(
             'h2o.h2o',
             ['h2o/h2o.pyx'],
-            libraries=['h2o-evloop', 'crypto', 'ssl', 'wslay'],
+            libraries=['h2o-evloop', 'ssl', 'crypto', 'wslay'],
             define_macros=[('H2O_USE_LIBUV', 0)],
         ),
     ]),
