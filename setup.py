@@ -1,4 +1,6 @@
 import os, os.path
+import sys
+import sysconfig
 from Cython.Build import cythonize
 from setuptools import setup
 from setuptools.command.build_ext import build_ext as _build_ext
@@ -23,6 +25,11 @@ class build_ext(_build_ext):
 
     def run(self):
         os.environ['CFLAGS'] = os.environ.get('CFLAGS', '') + ' -fPIC'
+        if (sys.platform == 'darwin' and
+            'MACOSX_DEPLOYMENT_TARGET' not in os.environ and
+            float(sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') or 0) < 10.7):
+            os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
+
         wslay_build_dir = self.get_temp_dir('wslay_build')
         h2o_build_dir = self.get_temp_dir('h2o_build')
         install_dir = self.get_temp_dir('install')
@@ -34,19 +41,22 @@ class build_ext(_build_ext):
 
         # Build libh2o-evloop
         spawn(['cmake', os.path.abspath('deps/h2o'),
-               '-DCMAKE_INSTALL_PREFIX=' + install_dir], h2o_build_dir)
+               '-DCMAKE_INSTALL_PREFIX=' + install_dir,
+               '-DWITH_BUNDLED_SSL=ON'], h2o_build_dir)
         spawn(['make', 'libh2o-evloop'], h2o_build_dir)
 
         self.include_dirs.append('deps/h2o/include')
+        self.include_dirs.append(os.path.join(h2o_build_dir, 'libressl-build', 'include'))
         self.include_dirs.append(os.path.join(install_dir, 'include'))
         self.library_dirs.append(h2o_build_dir)
+        self.library_dirs.append(os.path.join(h2o_build_dir, 'libressl-build', 'lib'))
         self.library_dirs.append(os.path.join(install_dir, 'lib'))
         return _build_ext.run(self)
 
 
 setup(
     name = 'pyh2o',
-    version = '0.0.1',
+    version = '0.0.2',
     description = 'H2O HTTP server library',
     long_description = open('README.rst').read(),
     url = 'https://github.com/iceb0y/pyh2o',
@@ -74,7 +84,7 @@ setup(
         Extension(
             'h2o.h2o',
             ['h2o/h2o.pyx'],
-            libraries=['h2o-evloop', 'ssl', 'wslay'],
+            libraries=['h2o-evloop', 'crypto', 'ssl', 'wslay'],
             define_macros=[('H2O_USE_LIBUV', 0)],
         ),
     ]),
