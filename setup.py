@@ -1,7 +1,8 @@
 import os, os.path
 import sys
 from Cython.Build import cythonize
-from distutils import sysconfig
+from distutils.sysconfig import get_config_var
+from distutils.version import LooseVersion
 from setuptools import setup
 from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools.extension import Extension
@@ -27,7 +28,8 @@ class build_ext(_build_ext):
         os.environ['CFLAGS'] = os.environ.get('CFLAGS', '') + ' -fPIC'
         if (sys.platform == 'darwin' and
             'MACOSX_DEPLOYMENT_TARGET' not in os.environ and
-            float(sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') or 0) < 10.7):
+            LooseVersion(get_config_var('MACOSX_DEPLOYMENT_TARGET') or '0') <
+                LooseVersion('10.7')):
             os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
         wslay_build_dir = self.get_temp_dir('wslay_build')
