@@ -19,8 +19,10 @@ cdef extern from "h2o.h":
         pass
 
     void h2o_config_init(h2o_globalconf_t* conf)
-    h2o_hostconf_t* h2o_config_register_host(h2o_globalconf_t* conf, h2o_iovec_t host, uint16_t port)
-    h2o_pathconf_t* h2o_config_register_path(h2o_hostconf_t* hostconf, const char* path, int flags)
+    h2o_hostconf_t* h2o_config_register_host(h2o_globalconf_t* conf,
+                                             h2o_iovec_t host, uint16_t port)
+    h2o_pathconf_t* h2o_config_register_path(h2o_hostconf_t* hostconf,
+                                             const char* path, int flags)
     void h2o_config_dispose(h2o_globalconf_t* conf)
 
     ctypedef struct h2o_handler_t:
@@ -80,8 +82,8 @@ cdef extern from "h2o.h":
         h2o_mem_pool_t pool
 
     ctypedef struct h2o_generator_t:
-        void (*proceed)(h2o_generator_t* self, h2o_req_t* req)
-        void (*stop)(h2o_generator_t* self, h2o_req_t* req)
+        void (*proceed)(h2o_generator_t* self, h2o_req_t* req) nogil
+        void (*stop)(h2o_generator_t* self, h2o_req_t* req) nogil
 
     void h2o_start_response(h2o_req_t* req, h2o_generator_t* generator)
     void h2o_send(h2o_req_t* req, h2o_iovec_t* bufs, size_t bufcnt, int state)
@@ -94,6 +96,9 @@ cdef extern from "h2o.h":
                                const char* value, size_t value_len)
 
     void* alloca(size_t size)
+
+    void* h2o_mem_alloc_shared(h2o_mem_pool_t* pool, size_t sz,
+                               void (*dispose)(void*) nogil)
 
 
 cdef extern from "wslay/wslay.h":

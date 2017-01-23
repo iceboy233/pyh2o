@@ -119,8 +119,16 @@ H2O_SEND_STATE_FINAL = 1
 H2O_SEND_STATE_ERROR = 2
 
 
+ctypedef struct pyh2o_generator_t:
+    ch2o.h2o_generator_t base
+    void* data
+
+
 cdef class StreamHandler(Handler):
-    cdef ch2o.h2o_generator_t generator
+    cdef list buffer_refs  # keeps reference for pending I/O
+
+    def __cinit__(self):
+        self.buffer_refs = list()
 
     def on_proceed(self):
         pass
@@ -129,40 +137,46 @@ cdef class StreamHandler(Handler):
         pass
 
     def start_response(self):
-        self.generator.proceed = _stream_handler_on_proceed
-        self.generator.stop = _stream_handler_on_stop
-        ch2o.h2o_start_response(self.req, &self.generator)
+        generator = <pyh2o_generator_t*>ch2o.h2o_mem_alloc_shared(
+            &self.req.pool, sizeof(pyh2o_generator_t), _generator_on_dispose)
+        generator.base.proceed = _generator_on_proceed
+        generator.base.stop = _generator_on_stop
         Py_INCREF(self)
+        generator.data = <void*>self
+        ch2o.h2o_start_response(self.req, &generator.base)
 
     def send(self, bodies, int send_state):
         bufcnt = len(bodies)
         cdef ch2o.h2o_iovec_t* bufs = (
             <ch2o.h2o_iovec_t*>ch2o.alloca(bufcnt * sizeof(ch2o.h2o_iovec_t)))
         for i in range(bufcnt):
-            bufs[i].base = bodies[i]
-            bufs[i].len = len(bodies[i])
+            body = bodies[i]
+            bufs[i].base = body
+            bufs[i].len = len(body)
+            self.buffer_refs.append(body)
         ch2o.h2o_send(self.req, bufs, bufcnt, send_state)
-        if send_state != H2O_SEND_STATE_IN_PROGRESS:
-            Py_DECREF(self)
 
 
-cdef StreamHandler _generator_to_stream_handler(ch2o.h2o_generator_t* generator):
-    result = <StreamHandler><void*>(<intptr_t>generator -
-                                    <intptr_t>&(<StreamHandler>NULL).generator)
-    Py_INCREF(result)
-    return result
-
-
-cdef void _stream_handler_on_proceed(ch2o.h2o_generator_t* generator,
-                                     ch2o.h2o_req_t* req) nogil:
+cdef void _generator_on_proceed(ch2o.h2o_generator_t* self,
+                                ch2o.h2o_req_t* req) nogil:
+    generator = <pyh2o_generator_t*>self
     with gil:
-        _generator_to_stream_handler(generator).on_proceed()
+        handler = <StreamHandler>(generator.data)
+        del handler.buffer_refs[:]
+        handler.on_proceed()
 
 
-cdef void _stream_handler_on_stop(ch2o.h2o_generator_t* generator,
-                                  ch2o.h2o_req_t* req) nogil:
+cdef void _generator_on_stop(ch2o.h2o_generator_t* self,
+                             ch2o.h2o_req_t* req) nogil:
+    generator = <pyh2o_generator_t*>self
     with gil:
-        _generator_to_stream_handler(generator).on_stop()
+        (<StreamHandler>(generator.data)).on_stop()
+
+
+cdef void _generator_on_dispose(void* self) nogil:
+    generator = <pyh2o_generator_t*>self
+    with gil:
+        Py_DECREF(<StreamHandler>generator.data)
 
 
 cdef class WebsocketHandler(Handler):
