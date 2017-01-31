@@ -38,6 +38,11 @@ ctypedef struct pyh2o_handler_t:
     void* data
 
 
+H2O_FILE_FLAG_NO_ETAG = 0x1
+H2O_FILE_FLAG_DIR_LISTING = 0x2
+H2O_FILE_FLAG_SEND_COMPRESSED = 0x4
+
+
 cdef class Path:
     cdef Config config  # keeps reference for pathconf
     cdef ch2o.h2o_pathconf_t* pathconf
@@ -47,6 +52,9 @@ cdef class Path:
             self.pathconf, sizeof(pyh2o_handler_t))
         handler.base.on_req = _handler_on_req
         handler.data = <void*>handler_type
+
+    def add_static(self, bytes real_path, int flags=0):
+        ch2o.h2o_file_register(self.pathconf, real_path, NULL, NULL, flags)
 
 
 cdef int _handler_on_req(ch2o.h2o_handler_t* self, ch2o.h2o_req_t* req) nogil:

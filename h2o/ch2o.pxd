@@ -30,6 +30,13 @@ cdef extern from "h2o.h":
 
     h2o_handler_t* h2o_create_handler(h2o_pathconf_t* pathconf, size_t sz)
 
+    ctypedef struct h2o_file_handler_t
+    ctypedef struct h2o_mimemap_t
+
+    h2o_file_handler_t* h2o_file_register(
+        h2o_pathconf_t* pathconf, const char* real_path, const char** index_files,
+        h2o_mimemap_t* mimemap, int flags)
+
     ctypedef struct h2o_loop_t:
         pass
 

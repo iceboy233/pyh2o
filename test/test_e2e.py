@@ -1,4 +1,5 @@
 import h2o
+import os
 import socket
 import threading
 import unittest
@@ -15,6 +16,7 @@ STREAM_PATH = b'/stream'
 STREAM_BODIES = [b'<h1>', b'Stream', b'</h1>']
 WEBSOCKET_PATH = b'/websocket'
 WEBSOCKET_MESSAGE = b'hello'
+STATIC_PATH = b'/static'
 
 
 class SimpleHandler(h2o.Handler):
@@ -70,6 +72,7 @@ class E2eTest(unittest.TestCase):
         host.add_path(RES_HEADER_PATH).add_handler(ResHeaderHandler)
         host.add_path(STREAM_PATH).add_handler(StreamHandler)
         host.add_path(WEBSOCKET_PATH).add_handler(WebsocketHandler)
+        host.add_path(STATIC_PATH).add_static(os.path.dirname(__file__).encode())
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
@@ -117,6 +120,11 @@ class E2eTest(unittest.TestCase):
         ws = self.ws_connect(WEBSOCKET_PATH)
         ws.send_binary(WEBSOCKET_MESSAGE)
         self.assertEqual(ws.recv(), WEBSOCKET_MESSAGE)
+
+    def test_static(self):
+        response = self.http_get(STATIC_PATH + b'/' + os.path.basename(__file__).encode())
+        with open(__file__, 'rb') as f:
+            self.assertEqual(response.read(), f.read())
 
 if __name__ == '__main__':
     unittest.main()
