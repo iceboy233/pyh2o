@@ -67,6 +67,10 @@ cdef int _handler_on_req(ch2o.h2o_handler_t* self, ch2o.h2o_req_t* req) nogil:
 
 cdef class Handler:
     cdef ch2o.h2o_req_t* req
+    cdef list buffer_refs  # keeps reference for pending I/O
+
+    def __cinit__(self):
+        self.buffer_refs = list()
 
     def on_req(self):
         pass
@@ -104,6 +108,8 @@ cdef class Handler:
             yield _iovec_to_bytes(&header.value)
 
     def res_add_header(self, bytes name, bytes value):
+        self.buffer_refs.append(name)
+        self.buffer_refs.append(value)
         ch2o.h2o_add_header_by_str(&self.req.pool, &self.req.res.headers,
                                    name, len(name), 1, value, len(value))
 
@@ -133,11 +139,6 @@ ctypedef struct pyh2o_generator_t:
 
 
 cdef class StreamHandler(Handler):
-    cdef list buffer_refs  # keeps reference for pending I/O
-
-    def __cinit__(self):
-        self.buffer_refs = list()
-
     def on_proceed(self):
         pass
 
