@@ -76,6 +76,17 @@ cdef class Handler:
         pass
 
     @property
+    def remote_ip(self):
+        cdef ch2o.sockaddr_storage sa
+        salen = self.req.conn.callbacks.get_peername(self.req.conn, <ch2o.sockaddr*>&sa)
+        if salen == 0:
+            return None
+        cdef char buf[ch2o.NI_MAXHOST]
+        if ch2o.h2o_socket_getnumerichost(<ch2o.sockaddr*>&sa, salen, buf) == SIZE_MAX:
+            return None
+        return buf
+
+    @property
     def authority(self):
         return _iovec_to_bytes(&self.req.authority)
 

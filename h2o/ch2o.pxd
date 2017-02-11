@@ -2,6 +2,8 @@ from libc.stdint cimport uint8_t, uint16_t
 
 
 cdef extern from "h2o.h":
+    cdef enum:
+        NI_MAXHOST
 
     ctypedef struct h2o_iovec_t:
         char* base
@@ -64,6 +66,19 @@ cdef extern from "h2o.h":
 
     void h2o_accept(h2o_accept_ctx_t* ctx, h2o_socket_t* sock)
 
+    ctypedef unsigned int socklen_t
+    cdef struct sockaddr
+    cdef struct sockaddr_storage:
+        pass
+
+    size_t h2o_socket_getnumerichost(sockaddr* sa, socklen_t salen, char* buf)
+
+    ctypedef struct h2o_conn_callbacks_t:
+        socklen_t (*get_peername)(h2o_conn_t* conn, sockaddr* sa)
+
+    ctypedef struct h2o_conn_t:
+        const h2o_conn_callbacks_t* callbacks
+
     ctypedef struct h2o_header_t:
         h2o_iovec_t* name
         h2o_iovec_t value
@@ -80,6 +95,7 @@ cdef extern from "h2o.h":
         pass
 
     ctypedef struct h2o_req_t:
+        h2o_conn_t* conn
         h2o_iovec_t authority
         h2o_iovec_t method
         h2o_iovec_t path
