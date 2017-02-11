@@ -116,11 +116,11 @@ class E2eTest(unittest.TestCase):
 
     def test_peername(self):
         response = self.http_get(PEERNAME_PATH)
-        with socket.fromfd(response.fileno(), socket.AF_INET,
-            socket.SOCK_STREAM) as sock:
-            sockname = sock.getsockname()
-            self.assertEqual(response.read(),
-                             (sockname[0] + ':' + str(sockname[1])).encode())
+        sock = socket.fromfd(response.fileno(), socket.AF_INET, socket.SOCK_STREAM)
+        sockname = sock.getsockname()
+        self.assertEqual(response.read(),
+                         (sockname[0] + ':' + str(sockname[1])).encode())
+        sock.close()
 
     def test_header(self):
         self.http_get(HEADER_PATH, {HEADER_NAME: HEADER_VALUE})
