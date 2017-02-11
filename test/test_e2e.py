@@ -8,7 +8,7 @@ from websocket import create_connection
 
 SIMPLE_PATH = b'/simple'
 SIMPLE_BODY = b'<h1>It works!</h1>'
-REMOTE_IP_PATH = b'/remote_ip'
+PEERNAME_PATH = b'/peername'
 HEADER_PATH = b'/header'
 HEADER_NAME = b'X-My-Header'
 HEADER_VALUE = b'Hello world!'
@@ -27,10 +27,11 @@ class SimpleHandler(h2o.Handler):
         return 0
 
 
-class RemoteIpHandler(h2o.Handler):
+class PeernameHandler(h2o.Handler):
     def on_req(self):
         self.res_status = 200
-        self.send_inline(self.remote_ip)
+        peername = self.peername
+        self.send_inline(peername[0] + b':' + str(peername[1]).encode())
         return 0
 
 
@@ -76,7 +77,7 @@ class E2eTest(unittest.TestCase):
         config = h2o.Config()
         host = config.add_host(b'default', 65535)
         host.add_path(SIMPLE_PATH).add_handler(SimpleHandler)
-        host.add_path(REMOTE_IP_PATH).add_handler(RemoteIpHandler)
+        host.add_path(PEERNAME_PATH).add_handler(PeernameHandler)
         host.add_path(HEADER_PATH).add_handler(HeaderHandler)
         host.add_path(RES_HEADER_PATH).add_handler(ResHeaderHandler)
         host.add_path(STREAM_PATH).add_handler(StreamHandler)
@@ -113,9 +114,13 @@ class E2eTest(unittest.TestCase):
         response = self.http_get(SIMPLE_PATH)
         self.assertEqual(response.read(), SIMPLE_BODY)
 
-    def test_remote_ip(self):
-        response = self.http_get(REMOTE_IP_PATH)
-        self.assertEqual(response.read(), b'127.0.0.1')
+    def test_peername(self):
+        response = self.http_get(PEERNAME_PATH)
+        with socket.fromfd(response.fileno(), socket.AF_INET,
+            socket.SOCK_STREAM) as sock:
+            sockname = sock.getsockname()
+            self.assertEqual(response.read(),
+                             (sockname[0] + ':' + str(sockname[1])).encode())
 
     def test_header(self):
         self.http_get(HEADER_PATH, {HEADER_NAME: HEADER_VALUE})

@@ -1,4 +1,4 @@
-from libc.stdint cimport uint8_t, uint16_t
+from libc.stdint cimport uint8_t, uint16_t, int32_t
 
 
 cdef extern from "h2o.h":
@@ -72,6 +72,7 @@ cdef extern from "h2o.h":
         pass
 
     size_t h2o_socket_getnumerichost(sockaddr* sa, socklen_t salen, char* buf)
+    int32_t h2o_socket_getport(sockaddr* sa)
 
     ctypedef struct h2o_conn_callbacks_t:
         socklen_t (*get_peername)(h2o_conn_t* conn, sockaddr* sa)
