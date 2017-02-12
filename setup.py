@@ -1,5 +1,6 @@
 import os, os.path
 import sys
+from cmake import CMAKE_BIN_DIR
 from Cython.Build import cythonize
 from distutils.sysconfig import get_config_var
 from distutils.version import LooseVersion
@@ -32,15 +33,16 @@ class build_ext(_build_ext):
                 LooseVersion('10.7')):
             os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
+        cmake = os.path.join(CMAKE_BIN_DIR, 'cmake')
         wslay_build_dir = self.get_temp_dir('wslay_build')
         h2o_build_dir = self.get_temp_dir('h2o_build')
 
         # Build libwslay
-        spawn(['cmake', os.path.abspath('deps/wslay')], wslay_build_dir)
+        spawn([cmake, os.path.abspath('deps/wslay')], wslay_build_dir)
         spawn(['make', 'wslay'], wslay_build_dir)
 
         # Build libh2o-evloop
-        spawn(['cmake', os.path.abspath('deps/h2o'),
+        spawn([cmake, os.path.abspath('deps/h2o'),
                '-DWSLAY_LIBRARIES=' + os.path.abspath(os.path.join(wslay_build_dir, 'lib')),
                '-DWSLAY_INCLUDE_DIR=' + os.path.abspath('deps/wslay/lib/includes'),
                '-DWITH_BUNDLED_SSL=ON'], h2o_build_dir)
@@ -70,10 +72,8 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: HTTP Servers',
         'Topic :: Software Development :: Libraries',
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.2',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',

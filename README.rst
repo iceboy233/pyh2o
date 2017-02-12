@@ -7,11 +7,6 @@ The pyh2o module provides Python binding for the `H2O HTTP server
 <https://github.com/h2o/h2o>`_. Specifically, it provides high performance
 HTTP 1/2 and websocket server for Python.
 
-Prerequisites
--------------
-* Python 2.6+ or 3.2+
-* cmake 2.8.12+
-
 Installation
 ------------
 
