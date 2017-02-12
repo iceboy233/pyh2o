@@ -5,7 +5,9 @@ python:
 - '3.4'
 - '3.5'
 - '3.6'
-install: pip install -r requirements.txt websocket-client
+install:
+- pip install scikit-build
+- pip install cython cmake websocket-client
 script: python setup.py test
 deploy:
   provider: pypi
