@@ -1,6 +1,5 @@
 import os, os.path
 import sys
-from cmake import CMAKE_BIN_DIR
 from Cython.Build import cythonize
 from distutils.sysconfig import get_config_var
 from distutils.version import LooseVersion
@@ -33,6 +32,7 @@ class build_ext(_build_ext):
                 LooseVersion('10.7')):
             os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.7'
 
+        from cmake import CMAKE_BIN_DIR
         cmake = os.path.join(CMAKE_BIN_DIR, 'cmake')
         wslay_build_dir = self.get_temp_dir('wslay_build')
         h2o_build_dir = self.get_temp_dir('h2o_build')
@@ -80,6 +80,7 @@ setup(
     ],
     keywords = 'h2o http server library',
     packages = ['h2o'],
+    install_requires = open('requirements.txt').readlines(),
     include_package_data = True,
     ext_modules = cythonize([
         Extension(
