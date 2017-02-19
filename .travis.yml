@@ -8,13 +8,3 @@ python:
 install:
 - pip install cython cmake websocket-client
 script: python setup.py test
-deploy:
-  provider: pypi
-  user: iceboy
-  password:
-    secure: lAmVy64syu99BiOTkgm59/Z3RMQ7doaHO3/X7QFAOwCgqPtB5+izIcSMdnBBSSDXtUeW1b18lOMDI6uTfFH7YIILdyK/iIb76IORRlNe6dZZIP1OorLco8Vt5Fdb0e4ClblKNnLRWACyPaQzYd0WxnG0hPaf2UGX5a2CHRN0mRKJSMlY6Z/8w9aR1Vu4UQGBJg9ZZwvQTEbiinReiKEN0QekgGQiB3atZSVBcbRvJKaIBSeDlD1mxE5DPy6XelH7QFHFdDZWvq13BG5XqHTkiSum9037e0fBm8cZd+GQ0cT3/UUMft0U8kvi3iAiEnM+FcBUTMcuVuOb2hHaSf8fEDv0RJnobSj2iwNTnCRGEsMedEcW2NGjN3TDjh1dtY1rQi3thcpW0IvQ95tkFZAN9Gp3F/kkAnnLUFfa4Sl7LcXvlM7OLetW3seEMgzXlfMrpXg3jssoXjxjVMVRrk+/MDPK72y7yOnrnj/hPnjIZcRNMpHiQAW8AqMywe35O17XCDo+TyQVH8b+GGvSpXzzWEsCultYASSimZNmfJJH2/wB0kpoTUZtM3Ae7f27/C3LaCR3Pu4hy7pMayvsAcUPmhNtmU0RmCjZlJPBGtC9rpH4ZXTjRz+BaOH/A1FAKuMBD+nt7HWYYrZcGsGWUT2HRswU00Be0/anIZNd3oa9Lls=
-  on:
-    tags: true
-    python: '3.5'
-  distributions: "sdist"
-  skip_upload_docs: true
