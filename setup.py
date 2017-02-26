@@ -57,7 +57,7 @@ class build_ext(_build_ext):
 
 setup(
     name = 'pyh2o',
-    version = '0.0.5',
+    version = '0.0.6',
     description = 'H2O HTTP server library',
     long_description = open('README.rst').read(),
     url = 'https://github.com/iceb0y/pyh2o',
