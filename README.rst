@@ -12,6 +12,8 @@ Installation
 
 :code:`pip install pyh2o`
 
+If binary distribution for your platform is not provided, you will need `cmake>=2.8.11` to install.
+
 Development
 -----------
 Clone the repository, initialize submodules by :code:`git submodule update --init --recursive`.
