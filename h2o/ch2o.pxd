@@ -104,6 +104,7 @@ cdef extern from "h2o.h":
         h2o_iovec_t path_normalized
         int version
         h2o_headers_t headers
+        h2o_iovec_t entity
         h2o_res_t res
         h2o_mem_pool_t pool
 

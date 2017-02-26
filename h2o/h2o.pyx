@@ -133,6 +133,13 @@ cdef class Handler:
             header = headers.entries[index]
             yield _iovec_to_bytes(&header.value)
 
+    @property
+    def entity(self):
+        if self.req.entity.base:
+            return _iovec_to_bytes(&self.req.entity)
+        else:
+            return None
+
     def res_add_header(self, bytes name, bytes value):
         self.buffer_refs.append(name)
         self.buffer_refs.append(value)

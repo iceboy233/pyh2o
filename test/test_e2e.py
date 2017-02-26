@@ -13,6 +13,8 @@ HEADER_PATH = b'/header'
 HEADER_NAME = b'X-My-Header'
 HEADER_VALUE = b'Hello world!'
 RES_HEADER_PATH = b'/res_header'
+POST_PATH = b'/post'
+POST_DATA = b'Post data'
 STREAM_PATH = b'/stream'
 STREAM_BODIES = [b'<h1>', b'Stream', b'</h1>']
 WEBSOCKET_PATH = b'/websocket'
@@ -52,6 +54,13 @@ class ResHeaderHandler(h2o.Handler):
         return 0
 
 
+class PostHandler(h2o.Handler):
+    def on_req(self):
+        self.res_status = 200
+        self.send_inline(self.entity)
+        return 0
+
+
 class StreamHandler(h2o.StreamHandler):
     def on_req(self):
         self.iterator = iter(STREAM_BODIES)
@@ -80,6 +89,7 @@ class E2eTest(unittest.TestCase):
         host.add_path(PEERNAME_PATH).add_handler(PeernameHandler)
         host.add_path(HEADER_PATH).add_handler(HeaderHandler)
         host.add_path(RES_HEADER_PATH).add_handler(ResHeaderHandler)
+        host.add_path(POST_PATH).add_handler(PostHandler)
         host.add_path(STREAM_PATH).add_handler(StreamHandler)
         host.add_path(WEBSOCKET_PATH).add_handler(WebsocketHandler)
         host.add_path(STATIC_PATH).add_static(os.path.dirname(__file__).encode())
@@ -107,6 +117,10 @@ class E2eTest(unittest.TestCase):
         return urllib.request.urlopen(urllib.request.Request(
             self.format_path('http', path), headers=headers))
 
+    def http_post(self, path, data):
+        return urllib.request.urlopen(urllib.request.Request(
+            self.format_path('http', path), data=data))
+
     def ws_connect(self, path):
         return create_connection(self.format_path('ws', path))
 
@@ -129,6 +143,10 @@ class E2eTest(unittest.TestCase):
         response = self.http_get(RES_HEADER_PATH)
         self.assertEqual(response.info()[HEADER_NAME.decode()],
                          HEADER_VALUE.decode())
+
+    def test_post(self):
+        response = self.http_post(POST_PATH, POST_DATA)
+        self.assertEqual(response.read(), POST_DATA)
 
     def test_stream(self):
         response = self.http_get(STREAM_PATH)
