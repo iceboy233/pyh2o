@@ -102,6 +102,18 @@ cdef class Handler:
         return _iovec_to_bytes(&self.req.path)
 
     @property
+    def query_at(self):
+        query_at = self.req.query_at
+        if query_at != SIZE_MAX:
+            return query_at
+        else:
+            return None
+
+    @property
+    def path_normalized(self):
+        return _iovec_to_bytes(&self.req.path_normalized)
+
+    @property
     def version(self):
         return self.req.version
 
